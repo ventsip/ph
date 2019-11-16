@@ -10,7 +10,9 @@ import (
 )
 
 func TestCheckRunningProcesses(t *testing.T) {
-	ph := NewProcessHunter(nil, time.Second)
+	l := make(DailyTimeLimit)
+	l["zsh"] = time.Second
+	ph := NewProcessHunter(l, time.Second)
 
 	err := ph.checkProcesses(context.Background(), time.Second*2)
 
@@ -22,11 +24,7 @@ func TestCheckRunningProcesses(t *testing.T) {
 		t.Error("checkProcess produced zero balance")
 	}
 }
-func TestGetRunningProcesses(t *testing.T) {
-	if _, err := getRunningProcess(context.Background()); err != nil {
-		t.Error("getRunningProcess returned error", err)
-	}
-}
+
 func TestDateToText(t *testing.T) {
 	dts := toText(time.Date(1972, time.October, 16, 0, 0, 0, 0, time.UTC))
 	if dts != "1972-10-16" {
@@ -63,18 +61,6 @@ func TestAddToDailyTimeBalance(t *testing.T) {
 				}
 			}
 		}
-	}
-}
-
-func TestGetRunningProcessesContext(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	cancel()
-
-	_, err := getRunningProcess(ctx)
-
-	if err != ctx.Err() {
-		t.Errorf("not responding to cancelled context")
 	}
 }
 

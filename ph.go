@@ -39,9 +39,12 @@ func NewProcessHunter(limits DailyTimeLimit, period time.Duration) *ProcessHunte
 func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) error {
 
 	// 1. get all processes and update their time balance for the day
-	pss, err := getRunningProcess(ctx)
+	// ---------------
+
+	pss, err := ps.Processes()
 
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -52,15 +55,18 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			ph.balance.add(day, p, dur)
+			ph.balance.add(day, p.Executable(), dur)
 		}
 	}
 
 	// 2. check which processes are overtime
+	// ---------------
+
 	d := ph.balance[day]
-	for p, t := range ph.limits {
-		if d[p] > t {
-			log.Println("process", p, "running time", d[p], "is over the time limit of", t)
+	for p, l := range ph.limits {
+		if d[p] > l {
+			log.Println("process", p, "running time", d[p], "is over the time limit of", l)
+			// todo: kill the process
 		}
 	}
 	return nil
@@ -95,26 +101,6 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, wo
 			work(ctx, period)
 		}
 	}
-}
-
-func getRunningProcess(ctx context.Context) (processes []string, err error) {
-	pss, err := ps.Processes()
-
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	for _, p := range pss {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-			processes = append(processes, p.Executable())
-		}
-	}
-
-	return
 }
 
 // add adds dur to the balance of the process proc for the day
