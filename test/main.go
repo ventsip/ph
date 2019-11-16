@@ -19,8 +19,7 @@ func main() {
 	wg.Add(1)
 
 	l := make(ph.DailyTimeLimit)
-	l["Slack"] = time.Second
-	l["zsh"] = time.Second
+	l["test_target"] = time.Second
 	ph := ph.NewProcessHunter(l, period, func(pid int) error { log.Println("boom", pid); return nil })
 	go ph.Run(ctx, &wg)
 
