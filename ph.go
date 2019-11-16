@@ -53,12 +53,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 	day := toText(time.Now())
 
 	for _, p := range pss {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			ph.balance.add(day, p.Executable(), dur)
-		}
+		ph.balance.add(day, p.Executable(), dur)
 	}
 
 	// 2. check which processes are overtime and kill them
@@ -67,14 +62,20 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 	d := ph.balance[day]
 	for p, l := range ph.limits {
 		if d[p] > l {
-			log.Println("process", p, "running time", d[p], "is over the time limit of", l)
+			log.Println("process", p, "running time of", d[p], "is over the time limit of", l)
 			for _, a := range pss {
 				if a.Executable() == p {
 					log.Println("killing", a.Pid())
-					if ph.killer != nil {
-						err := ph.killer(a.Pid())
-						if err != nil {
-							log.Println("error killing process", a.Pid(), ":", err.Error())
+					// check if context is cacelled before attempting to kill
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					default:
+						if ph.killer != nil {
+							err := ph.killer(a.Pid())
+							if err != nil {
+								log.Println("error killing process", a.Pid(), ":", err.Error())
+							}
 						}
 					}
 				}
