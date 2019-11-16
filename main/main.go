@@ -19,7 +19,7 @@ func main() {
 	ph := ph.NewProcessHunter(nil, time.Second)
 	go ph.Run(ctx, &wg)
 
-	time.Sleep(time.Second * 3000)
+	time.Sleep(time.Second * 3)
 	cancel()
 
 	wg.Wait()

@@ -21,19 +21,24 @@ type dailyTimeBalance map[string]timeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime for particular day
 type ProcessHunter struct {
-	limits       DailyTimeLimit
-	dailyReports dailyTimeBalance
+	limits  DailyTimeLimit
+	balance dailyTimeBalance
 
 	period time.Duration
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
 func NewProcessHunter(limits DailyTimeLimit, period time.Duration) *ProcessHunter {
-	return &ProcessHunter{limits: limits, period: period, dailyReports: make(dailyTimeBalance)}
+	return &ProcessHunter{
+		limits:  limits,
+		period:  period,
+		balance: make(dailyTimeBalance),
+	}
 }
 
 func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) error {
 
+	// 1. get all processes and update their time balance for the day
 	pss, err := getRunningProcess(ctx)
 
 	if err != nil {
@@ -47,10 +52,17 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			ph.dailyReports.add(day, p, dur)
+			ph.balance.add(day, p, dur)
 		}
 	}
 
+	// 2. check which processes are overtime
+	d := ph.balance[day]
+	for p, t := range ph.limits {
+		if d[p] > t {
+			log.Println("process", p, "running time", d[p], "is over the time limit of", t)
+		}
+	}
 	return nil
 }
 
@@ -112,11 +124,6 @@ func (dr *dailyTimeBalance) add(day string, proc string, dur time.Duration) {
 	}
 
 	(*dr)[day][proc] = (*dr)[day][proc] + dur
-}
-
-// isOverTime returns true if the process proc time balance is above specified duration dur
-func (dr *dailyTimeBalance) isOverTime(day string, proc string, dur time.Duration) bool {
-	return (*dr)[day][proc] > dur
 }
 
 // toText returns string representation of the date of t

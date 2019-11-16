@@ -18,8 +18,8 @@ func TestCheckRunningProcesses(t *testing.T) {
 		t.Error("checkProcesses returned unexpected error", err)
 	}
 
-	if len(ph.dailyReports) == 0 {
-		t.Error("checkProcess produced zero report")
+	if len(ph.balance) == 0 {
+		t.Error("checkProcess produced zero balance")
 	}
 }
 func TestGetRunningProcesses(t *testing.T) {
@@ -33,29 +33,7 @@ func TestDateToText(t *testing.T) {
 		t.Error("date formatted incorectly, expected 1972-10-16, got", dts)
 	}
 }
-func TestCheckOverTime(t *testing.T) {
-	var drs dailyTimeBalance = make(dailyTimeBalance)
 
-	drs.add("1", "p1", time.Second)
-	drs.add("1", "p2", time.Second)
-	drs.add("1", "p2", time.Second)
-	drs.add("2", "p1", time.Second)
-	drs.add("2", "p2", time.Second)
-	drs.add("2", "p2", time.Second)
-
-	if drs.isOverTime("1", "p1", time.Second) == true {
-		t.Error("process p1 for day 1 must not report overtime")
-	}
-	if drs.isOverTime("1", "p2", time.Second) == false {
-		t.Error("process p2 for day 1 must report overtime")
-	}
-	if drs.isOverTime("2", "p1", time.Second) == true {
-		t.Error("process p1 for day 2 must not report overtime")
-	}
-	if drs.isOverTime("2", "p2", time.Second) == false {
-		t.Error("process p2 for day 2 must report overtime")
-	}
-}
 func TestAddToDailyTimeBalance(t *testing.T) {
 	var drs dailyTimeBalance = make(dailyTimeBalance)
 
