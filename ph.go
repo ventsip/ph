@@ -23,19 +23,21 @@ type dailyTimeBalance map[string]timeBalance
 type ProcessHunter struct {
 	limits  DailyTimeLimit
 	balance dailyTimeBalance
-
-	period time.Duration
+	period  time.Duration
+	killer  func(pid int) error
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
-func NewProcessHunter(limits DailyTimeLimit, period time.Duration) *ProcessHunter {
+func NewProcessHunter(limits DailyTimeLimit, period time.Duration, killer func(int) error) *ProcessHunter {
 	return &ProcessHunter{
 		limits:  limits,
 		period:  period,
 		balance: make(dailyTimeBalance),
+		killer:  killer,
 	}
 }
 
+// checkProcesses updates processes time balance and checks for overtime
 func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) error {
 
 	// 1. get all processes and update their time balance for the day
@@ -59,16 +61,27 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 		}
 	}
 
-	// 2. check which processes are overtime
+	// 2. check which processes are overtime and kill them
 	// ---------------
 
 	d := ph.balance[day]
 	for p, l := range ph.limits {
 		if d[p] > l {
 			log.Println("process", p, "running time", d[p], "is over the time limit of", l)
-			// todo: kill the process
+			for _, a := range pss {
+				if a.Executable() == p {
+					log.Println("killing", a.Pid())
+					if ph.killer != nil {
+						err := ph.killer(a.Pid())
+						if err != nil {
+							log.Println("error killing process", a.Pid(), ":", err.Error())
+						}
+					}
+				}
+			}
 		}
 	}
+
 	return nil
 }
 

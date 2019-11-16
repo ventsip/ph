@@ -1,26 +1,30 @@
 package main
 
 import (
-	"bitbucket.org/ventsip/ph"
 	"context"
+	"log"
 	"sync"
 	"time"
+
+	"bitbucket.org/ventsip/ph"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// period defines how often the proccess list is checked
-	const period = time.Minute * 3
+	const period = time.Second * 3
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	ph := ph.NewProcessHunter(nil, time.Second)
+	l := make(ph.DailyTimeLimit)
+	l["Slack"] = time.Second
+	l["zsh"] = time.Second
+	ph := ph.NewProcessHunter(l, period, func(pid int) error { log.Println("boom", pid); return nil })
 	go ph.Run(ctx, &wg)
 
-	time.Sleep(time.Second * 3)
+	time.Sleep(period * 3)
 	cancel()
-
 	wg.Wait()
 }

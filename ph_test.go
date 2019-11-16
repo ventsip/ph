@@ -12,7 +12,7 @@ import (
 func TestCheckRunningProcesses(t *testing.T) {
 	l := make(DailyTimeLimit)
 	l["zsh"] = time.Second
-	ph := NewProcessHunter(l, time.Second)
+	ph := NewProcessHunter(l, time.Second, func(int) error { return nil })
 
 	err := ph.checkProcesses(context.Background(), time.Second*2)
 
