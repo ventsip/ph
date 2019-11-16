@@ -1,4 +1,4 @@
-package main
+package ph
 
 import (
 	"context"
@@ -9,6 +9,24 @@ import (
 	"time"
 )
 
+func TestCheckRunningProcesses(t *testing.T) {
+	ph := NewProcessHunter(nil, time.Second)
+
+	err := ph.checkProcesses(context.Background(), time.Second*2)
+
+	if err != nil {
+		t.Error("checkProcesses returned unexpected error", err)
+	}
+
+	if len(ph.dailyReports) == 0 {
+		t.Error("checkProcess produced zero report")
+	}
+}
+func TestGetRunningProcesses(t *testing.T) {
+	if _, err := getRunningProcess(context.Background()); err != nil {
+		t.Error("getRunningProcess returned error", err)
+	}
+}
 func TestDateToText(t *testing.T) {
 	dts := toText(time.Date(1972, time.October, 16, 0, 0, 0, 0, time.UTC))
 	if dts != "1972-10-16" {
@@ -88,7 +106,7 @@ func TestSchedulerContext(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go scheduler(ctx, &wg, time.Second*10, func(context.Context, time.Duration, []string) error { return nil })
+	go scheduler(ctx, &wg, time.Second*10, func(context.Context, time.Duration) error { return nil })
 
 	start := time.Now()
 	cancel()
@@ -101,14 +119,11 @@ func TestSchedulerContext(t *testing.T) {
 
 func TestSchedulerPeriod(t *testing.T) {
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	funcCalled := make(chan struct{})
 
 	ct := int32(2)
 
-	f := func(context.Context, time.Duration, []string) error {
+	f := func(context.Context, time.Duration) error {
 		atomic.AddInt32(&ct, -1)
 		if 0 == ct {
 			funcCalled <- struct{}{}
@@ -119,7 +134,7 @@ func TestSchedulerPeriod(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go scheduler(ctx, &wg, time.Second, f)
+	go scheduler(context.Background(), &wg, time.Second, f)
 
 	timeout := time.NewTimer(time.Second * 2)
 	defer timeout.Stop()
