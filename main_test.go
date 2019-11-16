@@ -9,31 +9,60 @@ import (
 	"time"
 )
 
-func TestAccumulateDailyReport(t *testing.T) {
-	var drs dailyReport = make(dailyReport)
+func TestDateToText(t *testing.T) {
+	dts := toText(time.Date(1972, time.October, 16, 0, 0, 0, 0, time.UTC))
+	if dts != "1972-10-16" {
+		t.Error("date formatted incorectly, expected 1972-10-16, got", dts)
+	}
+}
+func TestCheckOverTime(t *testing.T) {
+	var drs dailyTimeBalance = make(dailyTimeBalance)
 
-	drs.accumulateTime("1", "p1", time.Second)
-	drs.accumulateTime("1", "p2", time.Second)
-	drs.accumulateTime("1", "p2", time.Second)
-	drs.accumulateTime("2", "p1", time.Second)
-	drs.accumulateTime("2", "p2", time.Second)
-	drs.accumulateTime("2", "p2", time.Second)
+	drs.add("1", "p1", time.Second)
+	drs.add("1", "p2", time.Second)
+	drs.add("1", "p2", time.Second)
+	drs.add("2", "p1", time.Second)
+	drs.add("2", "p2", time.Second)
+	drs.add("2", "p2", time.Second)
+
+	if drs.isOverTime("1", "p1", time.Second) == true {
+		t.Error("process p1 for day 1 must not report overtime")
+	}
+	if drs.isOverTime("1", "p2", time.Second) == false {
+		t.Error("process p2 for day 1 must report overtime")
+	}
+	if drs.isOverTime("2", "p1", time.Second) == true {
+		t.Error("process p1 for day 2 must not report overtime")
+	}
+	if drs.isOverTime("2", "p2", time.Second) == false {
+		t.Error("process p2 for day 2 must report overtime")
+	}
+}
+func TestAddToDailyTimeBalance(t *testing.T) {
+	var drs dailyTimeBalance = make(dailyTimeBalance)
+
+	drs.add("1", "p1", time.Second)
+	drs.add("1", "p2", time.Second)
+	drs.add("1", "p2", time.Second)
+	drs.add("2", "p1", time.Second)
+	drs.add("2", "p2", time.Second)
+	drs.add("2", "p2", time.Second)
 
 	for _, day := range []int{1, 2} {
 		dstr := strconv.Itoa(day)
 
 		if _, ok := drs[dstr]; !ok {
-			t.Error("report for", dstr, "not accumulated")
+			t.Error("time balance for day", dstr, "was not created")
 		} else {
 			for _, pr := range []int{1, 2} {
 
 				prs := "p" + strconv.Itoa(pr)
 
 				if _, ok := drs[dstr][prs]; !ok {
-					t.Error("report for", dstr, prs, "not accumulated")
+					t.Error("time balance for day", dstr, "and process", prs, "not accumulated")
 				} else {
 					if drs[dstr][prs] != time.Duration(pr)*time.Second {
-						t.Error("report for", dstr, prs, "!=", pr, "seconds")
+						t.Error("time balance for day", dstr, "and process", prs, "!=", pr, "seconds")
 					}
 				}
 			}
@@ -59,7 +88,7 @@ func TestSchedulerContext(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go scheduler(ctx, &wg, time.Second*10, func(context.Context, time.Duration) error { return nil })
+	go scheduler(ctx, &wg, time.Second*10, func(context.Context, time.Duration, []string) error { return nil })
 
 	start := time.Now()
 	cancel()
@@ -79,7 +108,7 @@ func TestSchedulerPeriod(t *testing.T) {
 
 	ct := int32(2)
 
-	f := func(context.Context, time.Duration) error {
+	f := func(context.Context, time.Duration, []string) error {
 		atomic.AddInt32(&ct, -1)
 		if 0 == ct {
 			funcCalled <- struct{}{}

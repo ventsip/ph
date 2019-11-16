@@ -56,21 +56,33 @@ func getRunningProcess(ctx context.Context) (processes []string, err error) {
 	return
 }
 
-// procRunningTime maps process name to running time
-type procRunningTime map[string]time.Duration
+// timeBalance maps process name to running time
+type timeBalance map[string]time.Duration
 
-// dailyReport maps date to process running time
-type dailyReport map[string]procRunningTime
+// dailyTimeBalance maps date to process running time
+type dailyTimeBalance map[string]timeBalance
 
-func (dr *dailyReport) accumulateTime(day string, proc string, dur time.Duration) {
+// add adds dur to the balance of the process proc for the day
+func (dr *dailyTimeBalance) add(day string, proc string, dur time.Duration) {
 	if _, dOk := (*dr)[day]; !dOk {
-		(*dr)[day] = make(procRunningTime)
+		(*dr)[day] = make(timeBalance)
 	}
 
 	(*dr)[day][proc] = (*dr)[day][proc] + dur
 }
 
-var dailyReports dailyReport = make(dailyReport)
+// isOverTime returns true if the process proc time balance is above specified duration dur
+func (dr *dailyTimeBalance) isOverTime(day string, proc string, dur time.Duration) bool {
+	return (*dr)[day][proc] > dur
+}
+
+// toText returns string representation of the date of t
+func toText(t time.Time) string {
+	y, m, d := t.Date()
+	return strconv.Itoa(y) + "-" + strconv.Itoa(int(m)) + "-" + strconv.Itoa(d)
+}
+
+var dailyReports dailyTimeBalance = make(dailyTimeBalance)
 
 func checkProcesses(ctx context.Context, dur time.Duration) error {
 
@@ -80,15 +92,14 @@ func checkProcesses(ctx context.Context, dur time.Duration) error {
 		return err
 	}
 
-	y, m, d := time.Now().Date()
-	day := strconv.Itoa(y) + "-" + strconv.Itoa(int(m)) + "-" + strconv.Itoa(d)
+	day := toText(time.Now())
 
 	for _, p := range pss {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			dailyReports.accumulateTime(day, p, dur)
+			dailyReports.add(day, p, dur)
 		}
 	}
 
