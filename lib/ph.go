@@ -37,8 +37,8 @@ func NewProcessHunter(limits DailyTimeLimit, period time.Duration, killer func(i
 	}
 }
 
-// checkProcesses updates processes time balance and checks for overtime
-func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) error {
+// checkProcesses updates processes time balance (addint t), checks for overtime and kills processes
+func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) error {
 
 	// 1. get all processes and update their time balance for the day
 	// ---------------
@@ -53,7 +53,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 	day := toText(time.Now())
 
 	for _, p := range pss {
-		ph.balance.add(day, p.Executable(), dur)
+		ph.balance.add(day, p.Executable(), t)
 	}
 
 	// 2. check which processes are overtime and kill them
@@ -103,7 +103,7 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, wo
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 
-	err := work(ctx, period)
+	err := work(ctx, 0) // don't add anything to process balance on the first call
 	if err != nil {
 		return
 	}
@@ -118,13 +118,13 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, wo
 	}
 }
 
-// add adds dur to the balance of the process proc for the day
-func (dr *dailyTimeBalance) add(day string, proc string, dur time.Duration) {
+// add adds t to the balance of the process proc for the day
+func (dr *dailyTimeBalance) add(day string, proc string, t time.Duration) {
 	if _, dOk := (*dr)[day]; !dOk {
 		(*dr)[day] = make(timeBalance)
 	}
 
-	(*dr)[day][proc] = (*dr)[day][proc] + dur
+	(*dr)[day][proc] = (*dr)[day][proc] + t
 }
 
 // toText returns string representation of the date of t
