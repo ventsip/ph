@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
 	"sync"
-	"syscall"
 	"time"
 
 	"bitbucket.org/ventsip/ph"
@@ -20,19 +18,9 @@ func main() {
 	wg.Add(1)
 
 	l := make(ph.DailyTimeLimit)
-	l["test_target"] = time.Second
+	l["test_target.exe"] = time.Second
 
-	f := func(pid int, force bool) error {
-		log.Println("boom", pid)
-		// Kill the process
-		if force {
-			return syscall.Kill(pid, syscall.SIGKILL)
-		}
-
-		return syscall.Kill(pid, syscall.SIGTERM)
-	}
-
-	ph := ph.NewProcessHunter(l, period, f)
+	ph := ph.NewProcessHunter(l, period, ph.Kill)
 	go ph.Run(ctx, &wg)
 
 	time.Sleep(period * 5)
