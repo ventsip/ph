@@ -24,11 +24,11 @@ type ProcessHunter struct {
 	limits  DailyTimeLimit
 	balance dailyTimeBalance
 	period  time.Duration
-	killer  func(pid int) error
+	killer  func(pid int, force bool) error
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
-func NewProcessHunter(limits DailyTimeLimit, period time.Duration, killer func(int) error) *ProcessHunter {
+func NewProcessHunter(limits DailyTimeLimit, period time.Duration, killer func(int, bool) error) *ProcessHunter {
 	return &ProcessHunter{
 		limits:  limits,
 		period:  period,
@@ -62,23 +62,29 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 	d := ph.balance[day]
 	for p, l := range ph.limits {
 		if d[p] > l {
+			force := d[p] > l+time.Second*15
 			log.Println("process", p, "running time of", d[p], "is over the time limit of", l)
+			pidExists := false
 			for _, a := range pss {
 				if a.Executable() == p {
-					log.Println("killing", a.Pid())
+					pidExists = true
+					log.Println("killing", a.Pid(), "force:", force)
 					// check if context is cacelled before attempting to kill
 					select {
 					case <-ctx.Done():
 						return ctx.Err()
 					default:
 						if ph.killer != nil {
-							err := ph.killer(a.Pid())
+							err := ph.killer(a.Pid(), force)
 							if err != nil {
 								log.Println("error killing process", a.Pid(), ":", err.Error())
 							}
 						}
 					}
 				}
+			}
+			if pidExists == false {
+				delete(ph.balance[day], p)
 			}
 		}
 	}
