@@ -9,10 +9,58 @@ import (
 	"time"
 )
 
+func TestSaveBalance(t *testing.T) {
+
+	ph := NewProcessHunter(nil, time.Second, nil)
+	cfg := "test\\cfg.json"
+
+	err := ph.LoadConfig(cfg)
+
+	if err != nil {
+		t.Error("Error loading config file", cfg, err)
+	}
+
+	ph.balance.add("1", "p1", time.Second)
+	ph.balance.add("1", "p2", time.Second)
+	ph.balance.add("1", "p2", time.Second)
+	ph.balance.add("2", "p1", time.Second)
+	ph.balance.add("2", "p2", time.Second)
+	ph.balance.add("2", "p2", time.Second)
+
+	bal := "test\\balance.json"
+
+	err = ph.SaveBalance(bal)
+
+	if err != nil {
+		t.Error("Error saving balance to file", bal, err)
+	}
+}
+func TestLoadConfig(t *testing.T) {
+	l := make(DailyTimeLimit)
+	l["should_disappear"] = time.Minute
+	ph := NewProcessHunter(l, time.Second, nil)
+
+	path := "test\\cfg.json"
+
+	err := ph.LoadConfig(path)
+
+	if err != nil {
+		t.Error("Error loading config file", path, err)
+	}
+
+	if len(ph.limits) != 2 {
+		t.Error("Read", len(ph.limits), "limits, expected 2")
+	}
+
+	if ph.limits["test_target"] != time.Second || ph.limits["test_target.exe"] != time.Second {
+		t.Error("Config file", path, "not read correctly")
+	}
+}
+
 func TestCheckRunningProcesses(t *testing.T) {
 	l := make(DailyTimeLimit)
 	l["zsh"] = time.Second
-	ph := NewProcessHunter(l, time.Second, func(int, bool) error { return nil })
+	ph := NewProcessHunter(l, time.Second, nil)
 
 	err := ph.checkProcesses(context.Background(), time.Second*2)
 
