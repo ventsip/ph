@@ -9,15 +9,17 @@ import (
 	"time"
 )
 
-func TestSaveBalance(t *testing.T) {
+const configPath = "test/cfg.json"
+const balancePath = "test/balance.json"
+
+func TestPersistBalance(t *testing.T) {
 
 	ph := NewProcessHunter(nil, time.Second, nil)
-	cfg := "test\\cfg.json"
 
-	err := ph.LoadConfig(cfg)
+	err := ph.LoadConfig(configPath)
 
 	if err != nil {
-		t.Error("Error loading config file", cfg, err)
+		t.Error("Error loading config file", configPath, err)
 	}
 
 	ph.balance.add("1", "p1", time.Second)
@@ -27,12 +29,22 @@ func TestSaveBalance(t *testing.T) {
 	ph.balance.add("2", "p2", time.Second)
 	ph.balance.add("2", "p2", time.Second)
 
-	bal := "test\\balance.json"
+	err = ph.SaveBalance(balancePath)
 
-	err = ph.SaveBalance(bal)
+	ph.balance.add("3", "p1", time.Second)
 
 	if err != nil {
-		t.Error("Error saving balance to file", bal, err)
+		t.Error("Error saving balance to file", balancePath, err)
+	}
+
+	err = ph.LoadBalance(balancePath)
+
+	if err != nil {
+		t.Error("Error loading balance from file", balancePath, err)
+	}
+
+	if len(ph.balance) != 2 {
+		t.Error("Read", len(ph.balance), "days, expected 2")
 	}
 }
 func TestLoadConfig(t *testing.T) {
@@ -40,20 +52,20 @@ func TestLoadConfig(t *testing.T) {
 	l["should_disappear"] = time.Minute
 	ph := NewProcessHunter(l, time.Second, nil)
 
-	path := "test\\cfg.json"
-
-	err := ph.LoadConfig(path)
+	err := ph.LoadConfig(configPath)
 
 	if err != nil {
-		t.Error("Error loading config file", path, err)
+		t.Error("Error loading config file", configPath, err)
 	}
 
-	if len(ph.limits) != 2 {
-		t.Error("Read", len(ph.limits), "limits, expected 2")
+	if len(ph.limits) != 3 {
+		t.Error("Read", len(ph.limits), "limits, expected 3")
 	}
 
-	if ph.limits["test_target"] != time.Second || ph.limits["test_target.exe"] != time.Second {
-		t.Error("Config file", path, "not read correctly")
+	if ph.limits["test_target"] != time.Second ||
+		ph.limits["test_target.exe"] != time.Second ||
+		ph.limits["FortniteClient-Win64-Shipping.exe"] != 120*time.Second {
+		t.Error("Config file", configPath, "not read correctly")
 	}
 }
 

@@ -9,23 +9,21 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-
 	// period defines how often the proccess list is checked
 	const period = time.Second * 3
 
+	ph := ph.NewProcessHunter(nil, period, ph.Kill)
+	ph.LoadConfig("cfg.json")
+	ph.LoadBalance("balance.json")
+
+	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 	wg.Add(1)
-
-	l := make(ph.DailyTimeLimit)
-	l["test_target.exe"] = time.Second
-	// l["FortniteClient-Win64-Shipping.exe"] = time.Second
-
-	ph := ph.NewProcessHunter(l, period, ph.Kill)
-	go ph.Run(ctx, &wg)
-
-	time.Sleep(period * 5)
-	cancel()
+	{
+		go ph.Run(ctx, &wg)
+		time.Sleep(period * 5)
+		cancel()
+	}
 	wg.Wait()
 
 	ph.SaveBalance("balance.json")

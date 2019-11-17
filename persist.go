@@ -18,6 +18,19 @@ func (ph *ProcessHunter) LoadConfig(path string) error {
 	return json.Unmarshal(b, &ph.limits)
 }
 
+// LoadBalance loads the balance from provided path
+func (ph *ProcessHunter) LoadBalance(path string) error {
+	ph.balance = make(dailyTimeBalance)
+
+	b, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, &ph.balance)
+}
+
 // SaveBalance saves balance to provided path
 func (ph *ProcessHunter) SaveBalance(path string) error {
 	d, err := json.MarshalIndent(ph.balance, "", "\t")
