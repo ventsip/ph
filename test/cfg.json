@@ -1,5 +1,5 @@
 {
-    "test_target": 1000000000,
-    "test_target.exe": 1000000000,
+    "test_process": 1000000000,
+    "test_process.exe": 1000000000,
     "FortniteClient-Win64-Shipping.exe": 120000000000
 }

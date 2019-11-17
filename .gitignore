@@ -1,3 +1,2 @@
-test_target/test_target*
-ph.db
+test_process/test_process*
 test/balance.json

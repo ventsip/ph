@@ -62,8 +62,8 @@ func TestLoadConfig(t *testing.T) {
 		t.Error("Read", len(ph.limits), "limits, expected 3")
 	}
 
-	if ph.limits["test_target"] != time.Second ||
-		ph.limits["test_target.exe"] != time.Second ||
+	if ph.limits["test_process"] != time.Second ||
+		ph.limits["test_process.exe"] != time.Second ||
 		ph.limits["FortniteClient-Win64-Shipping.exe"] != 120*time.Second {
 		t.Error("Config file", configPath, "not read correctly")
 	}
