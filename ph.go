@@ -69,7 +69,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 				if a.Executable() == p {
 					pidExists = true
 					log.Println("killing", a.Pid(), "force:", force)
-					// check if context is cacelled before attempting to kill
+					// check if context is cancelled before attempting to kill
 					select {
 					case <-ctx.Done():
 						return ctx.Err()
