@@ -64,10 +64,8 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 		if d[p] > l {
 			force := d[p] > l+time.Second*15
 			log.Println("process", p, "running time of", d[p], "is over the time limit of", l)
-			pidExists := false
 			for _, a := range pss {
 				if a.Executable() == p {
-					pidExists = true
 					log.Println("killing", a.Pid(), "force:", force)
 					// check if context is cancelled before attempting to kill
 					select {
@@ -82,9 +80,6 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dur time.Duration) 
 						}
 					}
 				}
-			}
-			if pidExists == false {
-				delete(ph.balance[day], p)
 			}
 		}
 	}
