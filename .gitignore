@@ -1,4 +1,2 @@
-test_process/test_process*
-test/balance.json
-test/test*
-test/ph
+testdata/balance.json
+bin/

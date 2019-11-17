@@ -1,4 +1,4 @@
-package ph
+package lib
 
 import (
 	"encoding/json"

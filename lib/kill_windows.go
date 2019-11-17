@@ -1,6 +1,6 @@
 // +build windows
 
-package ph
+package lib
 
 import "syscall"
 

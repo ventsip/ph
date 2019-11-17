@@ -5,16 +5,16 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/ventsip/ph"
+	"bitbucket.org/ventsip/ph/lib"
 )
 
 func main() {
 	// period defines how often the proccess list is checked
 	const period = time.Second * 3
 
-	ph := ph.NewProcessHunter(nil, period, ph.Kill)
-	ph.LoadConfig("cfg.json")
-	ph.LoadBalance("balance.json")
+	ph := lib.NewProcessHunter(nil, period, lib.Kill)
+	ph.LoadConfig("../testdata/cfg.json")
+	ph.LoadBalance("../testdata/balance.json")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
@@ -26,5 +26,5 @@ func main() {
 	}
 	wg.Wait()
 
-	ph.SaveBalance("balance.json")
+	ph.SaveBalance("../testdata/balance.json")
 }

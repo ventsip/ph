@@ -1,4 +1,4 @@
-package ph
+package lib
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-const configPath = "test/cfg.json"
-const balancePath = "test/balance.json"
+const configPath = "../testdata/cfg.json"
+const balancePath = "../testdata/balance.json"
 
 func TestPersistBalance(t *testing.T) {
 
