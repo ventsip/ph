@@ -19,6 +19,7 @@ func main() {
 
 	l := make(ph.DailyTimeLimit)
 	l["test_target.exe"] = time.Second
+	// l["FortniteClient-Win64-Shipping.exe"] = time.Second
 
 	ph := ph.NewProcessHunter(l, period, ph.Kill)
 	go ph.Run(ctx, &wg)
@@ -26,4 +27,6 @@ func main() {
 	time.Sleep(period * 5)
 	cancel()
 	wg.Wait()
+
+	ph.SaveBalance("balance.json")
 }
