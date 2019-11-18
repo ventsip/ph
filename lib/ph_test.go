@@ -42,7 +42,9 @@ func TestKillProcess(t *testing.T) {
 		t.Error("Error loading config file", configPath, err)
 	}
 
-	ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second*3))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	ph.Run(ctx, &wg)
@@ -181,7 +183,7 @@ func TestSchedulerContext(t *testing.T) {
 
 func TestSchedulerPeriod(t *testing.T) {
 
-	funcCalled := make(chan struct{})
+	funcCalled := make(chan struct{}, 100)
 
 	ct := int32(2)
 
@@ -194,19 +196,22 @@ func TestSchedulerPeriod(t *testing.T) {
 		return nil
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go scheduler(context.Background(), &wg, time.Second, f)
+	go scheduler(ctx, &wg, time.Second, f)
 
 	timeout := time.NewTimer(time.Second * 2)
 	defer timeout.Stop()
 
 	select {
 	case <-funcCalled:
-		return
+
 	case <-timeout.C:
 		t.Errorf("function not called on time")
 	}
-
+	cancel()
 	wg.Wait()
 }
