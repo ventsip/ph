@@ -10,8 +10,11 @@ import (
 	"github.com/mitchellh/go-ps"
 )
 
-// DailyTimeLimit maps process name to the daily time limit
-type DailyTimeLimit map[string]time.Duration
+// DailyTimeLimit specify total time limit l for one or more processes p
+type DailyTimeLimit struct {
+	PG []string      `json:"processes"`
+	L  time.Duration `json:"limit"`
+}
 
 // timeBalance maps process name to running time
 type timeBalance map[string]time.Duration
@@ -21,14 +24,14 @@ type dailyTimeBalance map[string]timeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime for particular day
 type ProcessHunter struct {
-	limits  DailyTimeLimit
+	limits  []DailyTimeLimit
 	balance dailyTimeBalance
 	period  time.Duration
-	killer  func(pid int, force bool) error
+	killer  func(pid int) error
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
-func NewProcessHunter(limits DailyTimeLimit, period time.Duration, killer func(int, bool) error) *ProcessHunter {
+func NewProcessHunter(limits []DailyTimeLimit, period time.Duration, killer func(int) error) *ProcessHunter {
 	return &ProcessHunter{
 		limits:  limits,
 		period:  period,
@@ -60,22 +63,28 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 	// ---------------
 
 	d := ph.balance[day]
-	for p, l := range ph.limits {
-		if d[p] > l {
-			force := d[p] > l+time.Second*15
-			log.Println("process", p, "running time of", d[p], "is over the time limit of", l)
-			for _, a := range pss {
-				if a.Executable() == p {
-					log.Println("killing", a.Pid(), "force:", force)
-					// check if context is cancelled before attempting to kill
-					select {
-					case <-ctx.Done():
-						return ctx.Err()
-					default:
-						if ph.killer != nil {
-							err := ph.killer(a.Pid(), force)
-							if err != nil {
-								log.Println("error killing process", a.Pid(), ":", err.Error())
+	for _, l := range ph.limits { // iterate all limits
+		bg := time.Duration(0)
+		for _, p := range l.PG { // iterate all processes in the process group
+			bg = bg + d[p]
+		}
+		if bg > l.L {
+			log.Println("process group", l.PG, "total balance of", bg, "exceeds time limit of", l.L)
+			for _, p := range l.PG { // iterate all processes in the process group
+				log.Println("process", p, "from process group", l.PG, "has running time of", d[p])
+				for _, a := range pss { // iterate all running processes
+					if a.Executable() == p {
+						log.Println("killing", a.Pid())
+						// check if context is cancelled before attempting to kill
+						select {
+						case <-ctx.Done():
+							return ctx.Err()
+						default:
+							if ph.killer != nil {
+								err := ph.killer(a.Pid())
+								if err != nil {
+									log.Println("error killing process", a.Pid(), ":", err.Error())
+								}
 							}
 						}
 					}

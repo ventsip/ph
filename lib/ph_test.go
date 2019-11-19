@@ -13,25 +13,44 @@ import (
 const configPath = "../testdata/cfg.json"
 const balancePath = "../testdata/balance.json"
 const testProcess = "../bin/test_process"
+const testProcess1 = "../bin/test_process1"
+const testProcess2 = "../bin/test_process2"
+
+func startTestProcesses(t *testing.T, names ...string) (cmds [](*exec.Cmd), err error) {
+	for _, n := range names {
+		cmd := exec.Command(n)
+		e := cmd.Start()
+		if e != nil {
+			t.Error("Cannot start test process", n)
+			err = e
+		}
+		cmds = append(cmds, cmd)
+	}
+	return
+}
+
+func stopTestProcesses(t *testing.T, cmds [](*exec.Cmd)) (err error) {
+	for _, cmd := range cmds {
+		e := cmd.Process.Kill()
+		if e != nil {
+			t.Error("Cannot stop test process", cmd)
+			err = e
+		}
+	}
+	return
+}
 
 func TestKillProcess(t *testing.T) {
 	// start test process
-	cmd := exec.Command(testProcess)
-	err := cmd.Start()
+	cmds, err := startTestProcesses(t, testProcess1, testProcess2)
 	if err != nil {
-		t.Error("Cannot start test process", testProcess)
+		t.Error("Cannot start test processes", err)
 	}
 
-	killed := false
-	colateral := false
+	var killed []int
 
-	f := func(pid int, force bool) error {
-		if pid == cmd.Process.Pid {
-			killed = true
-		} else {
-			colateral = true
-		}
-
+	f := func(pid int) error {
+		killed = append(killed, pid)
 		return nil
 	}
 
@@ -42,7 +61,7 @@ func TestKillProcess(t *testing.T) {
 		t.Error("Error loading config file", configPath, err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*4)
 	defer cancel()
 
 	var wg sync.WaitGroup
@@ -50,17 +69,44 @@ func TestKillProcess(t *testing.T) {
 	ph.Run(ctx, &wg)
 	wg.Wait()
 
-	if !killed {
-		t.Error("Target process not killed")
+	allKilled := true
+	for _, cmd := range cmds {
+		dead := false
+		for _, k := range killed {
+			if k == cmd.Process.Pid {
+				dead = true
+			}
+		}
+		if !dead {
+			allKilled = false
+			break
+		}
+	}
+	if !allKilled {
+		t.Error("One or more of the target processes was not killed")
+	}
+
+	colateral := false
+	for _, k := range killed {
+		target := false
+		for _, cmd := range cmds {
+			if k == cmd.Process.Pid {
+				target = true
+			}
+		}
+		if !target {
+			colateral = true
+			break
+		}
 	}
 
 	if colateral {
-		t.Error("Killed wrong process")
+		t.Error("Killed one or more wrong processes")
 	}
 
-	err = cmd.Process.Kill()
+	err = stopTestProcesses(t, cmds)
 	if err != nil {
-		t.Error("Test process", testProcess, "cannot be terminated")
+		t.Error("Cannot stop test processes", err)
 	}
 }
 
@@ -100,8 +146,12 @@ func TestPersistBalance(t *testing.T) {
 	}
 }
 func TestLoadConfig(t *testing.T) {
-	l := make(DailyTimeLimit)
-	l["should_disappear"] = time.Minute
+	l := []DailyTimeLimit{
+		{[]string{"1"}, time.Minute},
+		{[]string{"2"}, time.Minute},
+		{[]string{"3"}, time.Minute},
+		{[]string{"4"}, time.Minute},
+	}
 	ph := NewProcessHunter(l, time.Second, nil)
 
 	err := ph.LoadConfig(configPath)
@@ -114,13 +164,11 @@ func TestLoadConfig(t *testing.T) {
 		t.Error("Read", len(ph.limits), "limits, expected 3")
 	}
 
-	if _, exists := ph.limits["should_disappear"]; exists {
-		t.Error("LoadConfig retained existing elements")
-	}
-
-	if ph.limits["test_process"] != time.Second ||
-		ph.limits["test_process.exe"] != time.Second ||
-		ph.limits["FortniteClient-Win64-Shipping.exe"] != 120*time.Second {
+	if len(ph.limits) != 3 ||
+		len(ph.limits[0].PG) != 2 ||
+		ph.limits[0].PG[0] != "test_process" ||
+		ph.limits[0].PG[1] != "test_process.exe" ||
+		ph.limits[0].L != time.Second {
 		t.Error("Config file", configPath, "not read correctly")
 	}
 }

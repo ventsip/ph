@@ -1,5 +1,24 @@
-{
-    "test_process": 1000000000,
-    "test_process.exe": 1000000000,
-    "FortniteClient-Win64-Shipping.exe": 120000000000
-}
+[
+    {
+        "processes": [
+            "test_process",
+            "test_process.exe"
+        ],
+        "limit": 1000000000
+    },
+    {
+        "processes": [
+            "test_process1",
+            "test_process2",
+            "test_process1.exe",
+            "test_process2.exe"
+        ],
+        "limit": 3000000000
+    },
+    {
+        "processes": [
+            "FortniteClient-Win64-Shipping.exe"
+        ],
+        "limit": 120000000000
+    }
+]
