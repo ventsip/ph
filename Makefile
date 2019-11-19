@@ -14,8 +14,8 @@ ifeq ($(OS), Windows_NT)
 	del /Q bin\*
 	del /Q testdata\$(BALANCE_JSON)
 else
-	rm bin/*
-	rm bin/$(BALANCE_JSON)
+	rm -f bin/*
+	rm -f testdata/$(BALANCE_JSON)
 endif
 
 
