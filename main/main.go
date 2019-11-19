@@ -16,14 +16,12 @@ func main() {
 	ph.LoadConfig("../testdata/cfg.json")
 	ph.LoadBalance("../testdata/balance.json")
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
 	var wg sync.WaitGroup
 	wg.Add(1)
-	{
-		go ph.Run(ctx, &wg)
-		time.Sleep(period * 5)
-		cancel()
-	}
+	go ph.Run(ctx, &wg)
 	wg.Wait()
 
 	ph.SaveBalance("../testdata/balance.json")
