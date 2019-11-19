@@ -21,9 +21,9 @@ endif
 
 build: 
 ifeq ($(OS), Windows_NT)
-	cd main & $(GOBUILD) -v -o ..\bin\$(BINARY).exe
+	cd cmd & $(GOBUILD) -v -o ..\bin\$(BINARY).exe
 else
-	cd main; $(GOBUILD) -v -o ../bin/$(BINARY)
+	cd cmd; $(GOBUILD) -v -o ../bin/$(BINARY)
 endif
 
 build_test: 

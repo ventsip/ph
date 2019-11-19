@@ -3,7 +3,6 @@ package lib
 import (
 	"context"
 	"log"
-	"strconv"
 	"sync"
 	"time"
 
@@ -140,6 +139,5 @@ func (dr *dailyTimeBalance) add(day string, proc string, t time.Duration) {
 
 // toText returns string representation of the date of t
 func toText(t time.Time) string {
-	y, m, d := t.Date()
-	return strconv.Itoa(y) + "-" + strconv.Itoa(int(m)) + "-" + strconv.Itoa(d)
+	return t.Format("2006-01-02")
 }
