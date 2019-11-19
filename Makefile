@@ -1,4 +1,4 @@
-.PHONY: build test build_test run
+.PHONY: clean build test build_test run
 
 GOCMD=go
 GOBUILD=$(GOCMD) build

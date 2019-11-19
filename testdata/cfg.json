@@ -17,7 +17,8 @@
     },
     {
         "processes": [
-            "FortniteClient-Win64-Shipping.exe"
+            "FortniteClient-Win64-Shipping.exe",
+            "RustClient.exe"
         ],
         "limit": 120000000000
     }
