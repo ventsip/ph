@@ -39,6 +39,11 @@ func NewProcessHunter(limits []DailyTimeLimit, period time.Duration, killer func
 	}
 }
 
+// GetLimits returns current daily limits (which are normally loaded from a config file)
+func (ph *ProcessHunter) GetLimits() []DailyTimeLimit {
+	return ph.limits
+}
+
 // checkProcesses updates processes time balance (addint t), checks for overtime and kills processes
 func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) error {
 

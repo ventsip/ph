@@ -28,6 +28,8 @@ func main() {
 		return
 	}
 
+	log.Println(ph.GetLimits())
+
 	if err := ph.LoadBalance(balanceFile); err != nil {
 		log.Println("error loading balance file", err)
 	}
