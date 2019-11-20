@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-const configPath = "../testdata/cfg.json"
-const balancePath = "../testdata/balance.json"
+const configPath = "../bin/cfg.json"
+const balancePath = "../bin/balance.json"
 const testProcess = "../bin/test_process"
 const testProcess1 = "../bin/test_process1"
 const testProcess2 = "../bin/test_process2"
