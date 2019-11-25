@@ -3,7 +3,30 @@ package lib
 import (
 	"encoding/json"
 	"io/ioutil"
+	"time"
 )
+
+// UnmarshalJSON unmarshales dtl using 12h35m46s duration format
+func (dtl *DailyTimeLimit) UnmarshalJSON(data []byte) error {
+	type Alias DailyTimeLimit
+
+	aux := &struct {
+		L string `json:"limit"`
+		*Alias
+	}{
+		Alias: (*Alias)(dtl),
+	}
+
+	err := json.Unmarshal(data, &aux)
+
+	if err != nil {
+		return err
+	}
+
+	dtl.L, err = time.ParseDuration(aux.L)
+
+	return err
+}
 
 // LoadConfig loads ProcessHunder configuration from path
 func (ph *ProcessHunter) LoadConfig(path string) error {

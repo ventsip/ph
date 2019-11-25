@@ -79,13 +79,13 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 					log.Println("process", p, "from process group", l.PG, "has running time of", d[p])
 					for _, a := range pss { // iterate all running processes
 						if a.Executable() == p {
-							log.Println("killing", a.Pid())
 							// check if context is cancelled before attempting to kill
 							select {
 							case <-ctx.Done():
 								return ctx.Err()
 							default:
 								if ph.killer != nil {
+									log.Println("killing", a.Pid())
 									err := ph.killer(a.Pid())
 									if err != nil {
 										log.Println("error killing process", a.Pid(), ":", err.Error())
@@ -98,7 +98,6 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 			}
 		}
 	}
-
 	return nil
 }
 

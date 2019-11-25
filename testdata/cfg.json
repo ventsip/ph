@@ -4,7 +4,7 @@
             "test_process",
             "test_process.exe"
         ],
-        "limit": 1000000000
+        "limit": "1s"
     },
     {
         "processes": [
@@ -13,13 +13,13 @@
             "test_process1.exe",
             "test_process2.exe"
         ],
-        "limit": 3000000000
+        "limit": "1s"
     },
     {
         "processes": [
             "FortniteClient-Win64-Shipping.exe",
             "RustClient.exe"
         ],
-        "limit": 120000000000
+        "limit": "2h45m"
     }
 ]

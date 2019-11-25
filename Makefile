@@ -21,8 +21,10 @@ endif
 build: 
 ifeq ($(OS), Windows_NT)
 	cd cmd & $(GOBUILD) -v -o ..\bin\$(BINARY).exe
+	copy testdata\$(CFG_FILE) bin
 else
 	cd cmd; $(GOBUILD) -v -o ../bin/$(BINARY)
+	cp testdata/$(CFG_FILE) bin
 endif
 
 build_test: 
