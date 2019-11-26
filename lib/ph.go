@@ -96,6 +96,8 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 					}
 				}
 			}
+		} else {
+			log.Println("process group", l.PG, "remaining time", l.L-bg)
 		}
 	}
 	return nil

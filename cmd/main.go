@@ -16,7 +16,7 @@ var version = "undefined"
 
 func main() {
 	log.Println("Process hunter:", version)
-	log.Println("Starting")
+	defer log.Println("exiting.")
 
 	// period defines how often the proccess list is checked
 	const period = time.Second * 180 // three minutes
@@ -25,7 +25,7 @@ func main() {
 
 	ph := lib.NewProcessHunter(nil, period, lib.Kill)
 
-	log.Println("loading config")
+	log.Println("loading config:", cfgFile)
 	if err := ph.LoadConfig(cfgFile); err != nil {
 		log.Println("error loading config file", err)
 		return
@@ -37,7 +37,6 @@ func main() {
 		log.Println("error loading balance file", err)
 	}
 
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -55,6 +54,4 @@ func main() {
 	wg.Wait()
 
 	ph.SaveBalance(balanceFile)
-
-	log.Println("Exiting")
 }
