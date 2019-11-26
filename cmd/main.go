@@ -53,5 +53,7 @@ func main() {
 	go ph.Run(ctx, &wg)
 	wg.Wait()
 
-	ph.SaveBalance(balanceFile)
+	if err := ph.SaveBalance(balanceFile); err != nil {
+		log.Println("error saving balance", err)
+	}
 }
