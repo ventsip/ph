@@ -12,7 +12,10 @@ import (
 	"bitbucket.org/ventsip/ph/lib"
 )
 
+var version = "undefined"
+
 func main() {
+	log.Println("Process hunter:", version)
 	log.Println("Starting")
 
 	// period defines how often the proccess list is checked
