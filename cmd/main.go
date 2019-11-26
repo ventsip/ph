@@ -41,10 +41,10 @@ func main() {
 	defer cancel()
 
 	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGABRT)
 	go func() {
-		<-c
-		log.Println("SIGTERM received")
+		sig := <-c
+		log.Println("signal", sig, "received")
 		cancel()
 	}()
 

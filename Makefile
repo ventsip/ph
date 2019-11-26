@@ -52,7 +52,7 @@ endif
 
 run: clean build build_test
 ifeq ($(OS), Windows_NT)
-	copy testdata\$(CFG_FILE) bin\
+	copy testdata\$(CFG_FILE) bin\ 
 	cd bin & start $(TEST_BINARY)
 	cd bin & start $(TEST_BINARY1)	
 	cd bin & start $(TEST_BINARY2)
