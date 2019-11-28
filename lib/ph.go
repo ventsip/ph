@@ -109,8 +109,8 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 	}
 
 	if (lastSaved.Add(ph.savePeriod)).Before(time.Now()) {
-		log.Println("saving balance", ph.path)
 		if ph.path != "" {
+			log.Println("saving balance", ph.path)
 			err := ph.SaveBalance(ph.path)
 
 			if err != nil {
