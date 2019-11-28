@@ -15,7 +15,7 @@ import (
 var version = "undefined"
 
 func main() {
-	log.Println("Process hunter:", version)
+	log.Println(version)
 	defer log.Println("exiting.")
 
 	// period defines how often the proccess list is checked
@@ -26,7 +26,7 @@ func main() {
 
 	ph := lib.NewProcessHunter(nil, checkPeriod, balanceFile, savePeriod, lib.Kill)
 
-	log.Println("loading config:", cfgFile)
+	log.Println("config:", cfgFile)
 	if err := ph.LoadConfig(cfgFile); err != nil {
 		log.Println("error loading config file", err)
 		return

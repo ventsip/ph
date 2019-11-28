@@ -80,10 +80,10 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 			bg = bg + d[p]
 		}
 		if bg > l.L {
-			log.Println(l.PG, "total balance of", bg, "exceeds time limit of", l.L)
+			log.Println(l.PG, ":", bg, "/", l.L)
 			for _, p := range l.PG { // iterate all processes in the process group
 				if d[p] > 0 {
-					log.Println("process", p, "from process group", l.PG, "has running time of", d[p])
+					log.Println(p, ":", d[p])
 					for _, a := range pss { // iterate all running processes
 						if a.Executable() == p {
 							// check if context is cancelled before attempting to kill
@@ -95,7 +95,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 									log.Println("killing", a.Pid())
 									err := ph.killer(a.Pid())
 									if err != nil {
-										log.Println("error killing process", a.Pid(), ":", err.Error())
+										log.Println("error killing", a.Pid(), ":", err.Error())
 									}
 								}
 							}
@@ -104,7 +104,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 				}
 			}
 		} else {
-			log.Println(l.PG, "remaining time", l.L-bg)
+			log.Println(l.PG, "remaining:", l.L-bg)
 		}
 	}
 
