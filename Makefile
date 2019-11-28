@@ -4,6 +4,7 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
 BINARY=ph
+VERSION=$(shell git describe --long --always --dirty)
 CFG_FILE=cfg.json
 TEST_BINARY=test_process
 TEST_BINARY1=test_process1
@@ -20,10 +21,10 @@ endif
 
 build: 
 ifeq ($(OS), Windows_NT)
-	cd cmd & $(GOBUILD) -v -o ..\bin\$(BINARY).exe
+	cd cmd & $(GOBUILD) -v -o ..\bin\$(BINARY).exe -ldflags="-X main.version=$(VERSION)"
 	copy testdata\$(CFG_FILE) bin
 else
-	cd cmd; $(GOBUILD) -v -o ../bin/$(BINARY)
+	cd cmd; $(GOBUILD) -v -o ../bin/$(BINARY) -ldflags="-X main.version=$(VERSION)"
 	cp testdata/$(CFG_FILE) bin
 endif
 
@@ -51,7 +52,7 @@ endif
 
 run: clean build build_test
 ifeq ($(OS), Windows_NT)
-	copy testdata\$(CFG_FILE) bin\
+	copy testdata\$(CFG_FILE) bin\ 
 	cd bin & start $(TEST_BINARY)
 	cd bin & start $(TEST_BINARY1)	
 	cd bin & start $(TEST_BINARY2)

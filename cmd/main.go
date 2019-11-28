@@ -12,8 +12,11 @@ import (
 	"bitbucket.org/ventsip/ph/lib"
 )
 
+var version = "undefined"
+
 func main() {
-	log.Println("Starting")
+	log.Println("Process hunter:", version)
+	defer log.Println("exiting.")
 
 	// period defines how often the proccess list is checked
 	const checkPeriod = time.Minute * 3
@@ -23,7 +26,7 @@ func main() {
 
 	ph := lib.NewProcessHunter(nil, checkPeriod, balanceFile, savePeriod, lib.Kill)
 
-	log.Println("loading config")
+	log.Println("loading config:", cfgFile)
 	if err := ph.LoadConfig(cfgFile); err != nil {
 		log.Println("error loading config file", err)
 		return
@@ -35,15 +38,14 @@ func main() {
 		log.Println("error loading balance file", err)
 	}
 
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGABRT)
 	go func() {
-		<-c
-		log.Println("SIGTERM received")
+		sig := <-c
+		log.Println("signal", sig, "received")
 		cancel()
 	}()
 
@@ -52,7 +54,7 @@ func main() {
 	go ph.Run(ctx, &wg)
 	wg.Wait()
 
-	ph.SaveBalance(balanceFile)
-
-	log.Println("Exiting")
+	if err := ph.SaveBalance(balanceFile); err != nil {
+		log.Println("error saving balance", err)
+	}
 }

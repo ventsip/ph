@@ -80,7 +80,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 			bg = bg + d[p]
 		}
 		if bg > l.L {
-			log.Println("process group", l.PG, "total balance of", bg, "exceeds time limit of", l.L)
+			log.Println(l.PG, "total balance of", bg, "exceeds time limit of", l.L)
 			for _, p := range l.PG { // iterate all processes in the process group
 				if d[p] > 0 {
 					log.Println("process", p, "from process group", l.PG, "has running time of", d[p])
@@ -103,6 +103,8 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 					}
 				}
 			}
+		} else {
+			log.Println(l.PG, "remaining time", l.L-bg)
 		}
 	}
 
