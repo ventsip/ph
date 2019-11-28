@@ -2,6 +2,7 @@ package lib
 
 import (
 	"context"
+	"os"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -54,7 +55,7 @@ func TestKillProcess(t *testing.T) {
 		return nil
 	}
 
-	ph := NewProcessHunter(nil, time.Second, f)
+	ph := NewProcessHunter(nil, time.Second, "", time.Hour, f)
 
 	err = ph.LoadConfig(configPath)
 	if err != nil {
@@ -110,9 +111,47 @@ func TestKillProcess(t *testing.T) {
 	}
 }
 
-func TestPersistBalance(t *testing.T) {
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+func TestPeriodicSaveBalance(t *testing.T) {
+	const checkPeriod = time.Second * 2
+	const timeOut = time.Second * 3
+	const savePeriod = time.Second * 2
+	const path = "tmp.balance.json"
 
-	ph := NewProcessHunter(nil, time.Second, nil)
+	ph := NewProcessHunter(nil, checkPeriod, path, savePeriod, nil)
+
+	err := os.Remove(path)
+	if fileExists(path) {
+		t.Error("cannot remove file", path)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	ph.Run(ctx, &wg)
+	wg.Wait()
+
+	if !fileExists(path) {
+		t.Error("balance file", path, "not created on-time")
+	} else {
+		err = os.Remove(path)
+		if err != nil {
+			t.Error("cannot cleanup file", path, ":", err)
+		}
+	}
+}
+
+func TestSaveBalance(t *testing.T) {
+
+	ph := NewProcessHunter(nil, time.Second, "", time.Hour, nil)
 
 	err := ph.LoadConfig(configPath)
 
@@ -152,7 +191,7 @@ func TestLoadConfig(t *testing.T) {
 		{[]string{"3"}, time.Minute},
 		{[]string{"4"}, time.Minute},
 	}
-	ph := NewProcessHunter(l, time.Second, nil)
+	ph := NewProcessHunter(l, time.Second, "", time.Hour, nil)
 
 	err := ph.LoadConfig(configPath)
 

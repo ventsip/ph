@@ -23,19 +23,23 @@ type dailyTimeBalance map[string]timeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime for particular day
 type ProcessHunter struct {
-	limits  []DailyTimeLimit
-	balance dailyTimeBalance
-	period  time.Duration
-	killer  func(pid int) error
+	limits      []DailyTimeLimit
+	balance     dailyTimeBalance
+	path        string // path is where the balance is periodically stored
+	savePeriod  time.Duration
+	checkPeriod time.Duration
+	killer      func(pid int) error
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
-func NewProcessHunter(limits []DailyTimeLimit, period time.Duration, killer func(int) error) *ProcessHunter {
+func NewProcessHunter(limits []DailyTimeLimit, checkPeriod time.Duration, path string, savePeriod time.Duration, killer func(int) error) *ProcessHunter {
 	return &ProcessHunter{
-		limits:  limits,
-		period:  period,
-		balance: make(dailyTimeBalance),
-		killer:  killer,
+		limits:      limits,
+		checkPeriod: checkPeriod,
+		balance:     make(dailyTimeBalance),
+		path:        path,
+		savePeriod:  savePeriod,
+		killer:      killer,
 	}
 }
 
@@ -43,6 +47,9 @@ func NewProcessHunter(limits []DailyTimeLimit, period time.Duration, killer func
 func (ph *ProcessHunter) GetLimits() []DailyTimeLimit {
 	return ph.limits
 }
+
+// savePeriod is when the balance was last saved
+var lastSaved = time.Now()
 
 // checkProcesses updates processes time balance (addint t), checks for overtime and kills processes
 func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) error {
@@ -98,12 +105,26 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 			}
 		}
 	}
+
+	if (lastSaved.Add(ph.savePeriod)).Before(time.Now()) {
+		log.Println("saving balance", ph.path)
+		if ph.path != "" {
+			err := ph.SaveBalance(ph.path)
+
+			if err != nil {
+				log.Println("error saving balance to", ph.path, ":", err)
+			} else {
+				lastSaved = time.Now()
+			}
+		}
+	}
+
 	return nil
 }
 
 // Run is a goroutine that periodically checks running processes
 func (ph *ProcessHunter) Run(ctx context.Context, wg *sync.WaitGroup) {
-	scheduler(ctx, wg, ph.period, ph.checkProcesses)
+	scheduler(ctx, wg, ph.checkPeriod, ph.checkProcesses)
 }
 
 // scheduler runs the work function periodically (every period seconds)

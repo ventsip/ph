@@ -16,11 +16,12 @@ func main() {
 	log.Println("Starting")
 
 	// period defines how often the proccess list is checked
-	const period = time.Second * 180 // three minutes
+	const checkPeriod = time.Minute * 3
+	const savePeriod = time.Minute * 5
 	const cfgFile = "cfg.json"
 	const balanceFile = "balance.json"
 
-	ph := lib.NewProcessHunter(nil, period, lib.Kill)
+	ph := lib.NewProcessHunter(nil, checkPeriod, balanceFile, savePeriod, lib.Kill)
 
 	log.Println("loading config")
 	if err := ph.LoadConfig(cfgFile); err != nil {
