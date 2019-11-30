@@ -4,7 +4,9 @@
             "test_process",
             "test_process.exe"
         ],
-        "limit": "1s"
+        "limits": {
+            "Mon tue WED": "1s"
+        }
     },
     {
         "processes": [
@@ -13,13 +15,19 @@
             "test_process1.exe",
             "test_process2.exe"
         ],
-        "limit": "1s"
+        "limits": {
+            "*": "1h",
+            "mon tue wed thu fri sat sun": "1s"
+        }
     },
     {
         "processes": [
             "FortniteClient-Win64-Shipping.exe",
             "RustClient.exe"
         ],
-        "limit": "2h45m"
+        "limits": {
+            "*": "2h",
+            "fri sat sun": "3h30m"
+        }
     }
 ]

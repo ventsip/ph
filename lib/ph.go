@@ -3,16 +3,24 @@ package lib
 import (
 	"context"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/mitchellh/go-ps"
 )
 
-// DailyTimeLimit specify total time limit l for one or more processes p
-type DailyTimeLimit struct {
-	PG []string      `json:"processes"`
-	L  time.Duration `json:"limit"`
+// DailyLimits maps days of the week to time limit
+// The key can be "*" (meaing 'any day of the week') or space separated string of
+// three-letter abbreviations of the days of week, i.e.
+// * Mon Tue Wed Thu Fri Sat Sun
+type DailyLimits map[string]time.Duration
+
+// ProcessGroupDailyLimit specifies daily time limit DL
+// for one or more processes in PG
+type ProcessGroupDailyLimit struct {
+	PG []string    `json:"processes"`
+	DL DailyLimits `json:"limits"`
 }
 
 // timeBalance maps process name to running time
@@ -23,7 +31,7 @@ type dailyTimeBalance map[string]timeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime for particular day
 type ProcessHunter struct {
-	limits      []DailyTimeLimit
+	limits      []ProcessGroupDailyLimit
 	balance     dailyTimeBalance
 	path        string // path is where the balance is periodically stored
 	savePeriod  time.Duration
@@ -32,7 +40,7 @@ type ProcessHunter struct {
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
-func NewProcessHunter(limits []DailyTimeLimit, checkPeriod time.Duration, path string, savePeriod time.Duration, killer func(int) error) *ProcessHunter {
+func NewProcessHunter(limits []ProcessGroupDailyLimit, checkPeriod time.Duration, path string, savePeriod time.Duration, killer func(int) error) *ProcessHunter {
 	return &ProcessHunter{
 		limits:      limits,
 		checkPeriod: checkPeriod,
@@ -44,12 +52,41 @@ func NewProcessHunter(limits []DailyTimeLimit, checkPeriod time.Duration, path s
 }
 
 // GetLimits returns current daily limits (which are normally loaded from a config file)
-func (ph *ProcessHunter) GetLimits() []DailyTimeLimit {
+func (ph *ProcessHunter) GetLimits() []ProcessGroupDailyLimit {
 	return ph.limits
 }
 
 // savePeriod is when the balance was last saved
 var lastSaved = time.Now()
+
+var weekDays = [...]string{
+	"sun",
+	"mon",
+	"tue",
+	"wed",
+	"thu",
+	"fri",
+	"sat",
+}
+
+func evalDailyLimit(wd string, dl DailyLimits) (l time.Duration) {
+	l = time.Hour * 25 // effectively - no limit
+	ingoreAny := false
+	for k, v := range dl {
+		if k == wd {
+			l = v
+			break
+		}
+		if strings.Contains(k, wd) {
+			l = v
+			ingoreAny = true
+		}
+		if k == "*" && !ingoreAny {
+			l = v
+		}
+	}
+	return
+}
 
 // checkProcesses updates processes time balance (addint t), checks for overtime and kills processes
 func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) error {
@@ -64,24 +101,29 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 		return err
 	}
 
-	day := toText(time.Now())
+	now := time.Now()
+	date := toText(now)
+	weekDay := weekDays[now.Weekday()]
 
 	for _, p := range pss {
-		ph.balance.add(day, p.Executable(), t)
+		ph.balance.add(date, p.Executable(), t)
 	}
 
 	// 2. check which processes are overtime and kill them
 	// ---------------
 
-	d := ph.balance[day]
-	for _, l := range ph.limits { // iterate all limits
+	d := ph.balance[date]
+	for _, pdl := range ph.limits { // iterate all processes daily limits
 		bg := time.Duration(0)
-		for _, p := range l.PG { // iterate all processes in the process group
+		for _, p := range pdl.PG { // iterate all processes in the process group
 			bg = bg + d[p]
 		}
-		if bg > l.L {
-			log.Println(l.PG, ":", bg, "/", l.L)
-			for _, p := range l.PG { // iterate all processes in the process group
+
+		l := evalDailyLimit(weekDay, pdl.DL)
+
+		if bg > l {
+			log.Println(pdl.PG, ":", bg, "/", l)
+			for _, p := range pdl.PG { // iterate all processes in the process group
 				if d[p] > 0 {
 					log.Println(p, ":", d[p])
 					for _, a := range pss { // iterate all running processes
@@ -104,7 +146,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 				}
 			}
 		} else {
-			log.Println(l.PG, "remaining:", l.L-bg)
+			log.Println(pdl.PG, "remaining:", l-bg)
 		}
 	}
 

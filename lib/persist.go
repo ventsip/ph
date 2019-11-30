@@ -2,20 +2,16 @@ package lib
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 )
 
 // UnmarshalJSON unmarshales dtl using 12h35m46s duration format
-func (dtl *DailyTimeLimit) UnmarshalJSON(data []byte) error {
-	type Alias DailyTimeLimit
-
-	aux := &struct {
-		L string `json:"limit"`
-		*Alias
-	}{
-		Alias: (*Alias)(dtl),
-	}
+func (dtl *DailyLimits) UnmarshalJSON(data []byte) error {
+	aux := make(map[string]string)
 
 	err := json.Unmarshal(data, &aux)
 
@@ -23,9 +19,45 @@ func (dtl *DailyTimeLimit) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	dtl.L, err = time.ParseDuration(aux.L)
+	(*dtl) = make(DailyLimits)
 
+	for k, v := range aux {
+		l, err := time.ParseDuration(v)
+		if err != nil {
+			break
+		}
+		(*dtl)[strings.ToLower(k)] = l // converts to lower caps
+	}
 	return err
+}
+
+func isValidDailyLimitsFormat(l DailyLimits) bool {
+	for k := range l {
+		if k == "*" {
+			continue
+		}
+
+		words := strings.Fields(k)
+
+		if len(words) == 0 {
+			return false
+		}
+
+		for _, w := range words {
+			valid := false
+			for _, d := range weekDays {
+				if w == d {
+					valid = true
+					break
+				}
+			}
+			if !valid {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 // LoadConfig loads ProcessHunder configuration from path
@@ -38,7 +70,19 @@ func (ph *ProcessHunter) LoadConfig(path string) error {
 		return err
 	}
 
-	return json.Unmarshal(b, &ph.limits)
+	err = json.Unmarshal(b, &ph.limits)
+
+	if err != nil {
+		return err
+	}
+
+	for _, l := range ph.limits {
+		if !isValidDailyLimitsFormat(l.DL) {
+			return errors.New(fmt.Sprintln("bad days of the week format:", l.DL))
+		}
+	}
+
+	return nil
 }
 
 // LoadBalance loads the balance from provided path

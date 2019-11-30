@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"reflect"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -41,8 +42,56 @@ func stopTestProcesses(t *testing.T, cmds [](*exec.Cmd)) (err error) {
 	return
 }
 
+func TestIsValidDailyLimitsFormat(t *testing.T) {
+
+	valid := []string{
+		"*",
+		"mon", "tue", "wed", "thu", "fri", "sat", "sun",
+		"mon tue wed thu fri sat sun",
+	}
+
+	for _, v := range valid {
+		if !isValidDailyLimitsFormat(DailyLimits{v: time.Second}) {
+			t.Error("couldn't recognize", v, "as valid week days string")
+		}
+	}
+
+	invalid := []string{
+		"Mon", "MOn", "MON",
+		"", "**",
+		"* mon",
+		"mon *",
+		"pon", "vto",
+		"pon vto wed thu fri sat sun",
+	}
+	for _, inv := range invalid {
+		if isValidDailyLimitsFormat(DailyLimits{inv: time.Second}) {
+			t.Error("accepted", inv, "as valid week days string")
+		}
+	}
+}
+
+func TestEvalDailyLimit(t *testing.T) {
+	dl := DailyLimits{"*": time.Second, "mon tue": time.Minute, "mon": time.Hour}
+	if evalDailyLimit("mon", dl) != time.Hour {
+		t.Error("wrong daily limit when day is individually specified")
+	}
+
+	if evalDailyLimit("tue", dl) != time.Minute {
+		t.Error("wrong daily limit when day is listed in a group")
+	}
+
+	if evalDailyLimit("wed", dl) != time.Second {
+		t.Error("wrong daily limit when day is not listed in a group or individually, but matched by \"*\"")
+	}
+
+	dl = DailyLimits{"tue": time.Second}
+	if evalDailyLimit("mon", dl) != time.Hour*25 {
+		t.Error("wrong daily limit when time limit cannot be evaluated")
+	}
+}
+
 func TestKillProcess(t *testing.T) {
-	// start test process
 	cmds, err := startTestProcesses(t, testProcess1, testProcess2)
 	if err != nil {
 		t.Error("Cannot start test processes", err)
@@ -185,11 +234,11 @@ func TestSaveBalance(t *testing.T) {
 	}
 }
 func TestLoadConfig(t *testing.T) {
-	l := []DailyTimeLimit{
-		{[]string{"1"}, time.Minute},
-		{[]string{"2"}, time.Minute},
-		{[]string{"3"}, time.Minute},
-		{[]string{"4"}, time.Minute},
+	l := []ProcessGroupDailyLimit{
+		{[]string{"1"}, DailyLimits{"*": time.Minute}},
+		{[]string{"2"}, DailyLimits{"*": time.Minute}},
+		{[]string{"3"}, DailyLimits{"*": time.Minute}},
+		{[]string{"4"}, DailyLimits{"*": time.Minute}},
 	}
 	ph := NewProcessHunter(l, time.Second, "", time.Hour, nil)
 
@@ -207,7 +256,7 @@ func TestLoadConfig(t *testing.T) {
 		len(ph.limits[0].PG) != 2 ||
 		ph.limits[0].PG[0] != "test_process" ||
 		ph.limits[0].PG[1] != "test_process.exe" ||
-		ph.limits[0].L != time.Second {
+		!reflect.DeepEqual(ph.limits[0].DL, DailyLimits{"mon tue wed": time.Second}) {
 		t.Error("Config file", configPath, "not read correctly")
 	}
 }
