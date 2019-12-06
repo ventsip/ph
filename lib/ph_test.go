@@ -12,11 +12,13 @@ import (
 	"time"
 )
 
-const configPath = "../bin/cfg.json"
-const balancePath = "../bin/balance.json"
-const testProcess = "../bin/test_process"
-const testProcess1 = "../bin/test_process1"
-const testProcess2 = "../bin/test_process2"
+const (
+	configPath   = "../bin/cfg.json"
+	balancePath  = "../bin/balance.json"
+	testProcess  = "../bin/test_process"
+	testProcess1 = "../bin/test_process1"
+	testProcess2 = "../bin/test_process2"
+)
 
 func startTestProcesses(t *testing.T, names ...string) (cmds [](*exec.Cmd), err error) {
 	for _, n := range names {
@@ -91,6 +93,15 @@ func TestEvalDailyLimit(t *testing.T) {
 	}
 }
 
+func TestCheckProcessNoConfig(t *testing.T) {
+	ph := NewProcessHunter(nil, time.Second, "", time.Hour, nil)
+
+	err := ph.checkProcesses(context.Background(), time.Second)
+
+	if err != nil {
+		t.Error("checkProcess() failed", err)
+	}
+}
 func TestKillProcess(t *testing.T) {
 	cmds, err := startTestProcesses(t, testProcess1, testProcess2)
 	if err != nil {
@@ -168,10 +179,12 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 func TestPeriodicSaveBalance(t *testing.T) {
-	const checkPeriod = time.Second * 2
-	const timeOut = time.Second * 3
-	const savePeriod = time.Second * 2
-	const path = "tmp.balance.json"
+	const (
+		checkPeriod = time.Second * 2
+		timeOut     = time.Second * 3
+		savePeriod  = time.Second * 2
+		path        = "tmp.balance.json"
+	)
 
 	ph := NewProcessHunter(nil, checkPeriod, path, savePeriod, nil)
 
