@@ -69,6 +69,11 @@ var weekDays = [...]string{
 	"sat",
 }
 
+// evalDailyLimit returns the daily time limit, parsing dl map
+// prioritizing more concrete, to more generic specifications, in order:
+// - specific day, e.g. "wed"
+// - a day from a list: "mon wed fri"
+// - any day "*"
 func evalDailyLimit(wd string, dl DailyLimits) (l time.Duration) {
 	l = time.Hour * 25 // effectively - no limit
 	ingoreAny := false
@@ -182,6 +187,7 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, wo
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 
+	t := time.Now()
 	err := work(ctx, 0) // don't add anything to process balance on the first call
 	if err != nil {
 		return
@@ -192,7 +198,8 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, wo
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			work(ctx, period)
+			work(ctx, time.Now().Sub(t))
+			t = time.Now()
 		}
 	}
 }

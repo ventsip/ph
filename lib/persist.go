@@ -31,6 +31,7 @@ func (dtl *DailyLimits) UnmarshalJSON(data []byte) error {
 	return err
 }
 
+// isValidDailyLimitsFormat checks whether string with daily limits is correct
 func isValidDailyLimitsFormat(l DailyLimits) bool {
 	for k := range l {
 		if k == "*" {
@@ -64,23 +65,28 @@ func isValidDailyLimitsFormat(l DailyLimits) bool {
 func (ph *ProcessHunter) LoadConfig(path string) error {
 	ph.limits = nil
 
+	// try to load into this temporary variable first
+	var limits []ProcessGroupDailyLimit
+
 	b, err := ioutil.ReadFile(path)
 
 	if err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(b, &ph.limits)
+	err = json.Unmarshal(b, &limits)
 
 	if err != nil {
 		return err
 	}
 
-	for _, l := range ph.limits {
+	for _, l := range limits {
 		if !isValidDailyLimitsFormat(l.DL) {
 			return errors.New(fmt.Sprintln("bad days of the week format:", l.DL))
 		}
 	}
+
+	ph.limits = limits
 
 	return nil
 }
