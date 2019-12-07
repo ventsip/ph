@@ -244,7 +244,23 @@ func TestSaveBalance(t *testing.T) {
 	}
 }
 
-func TestReloadConfig(t *testing.T) {
+func testConfigLoadedCorrectly(t *testing.T, ph *ProcessHunter) bool {
+	if len(ph.limits) != 3 {
+		t.Error(len(ph.limits), "limits, expected 3")
+		return false
+	}
+
+	if len(ph.limits) != 3 ||
+		len(ph.limits[0].PG) != 2 ||
+		ph.limits[0].PG[0] != "test_process" ||
+		ph.limits[0].PG[1] != "test_process.exe" ||
+		!reflect.DeepEqual(ph.limits[0].DL, DailyLimits{"mon tue wed": time.Second}) {
+		t.Error("Config file", configPath, "not read correctly")
+		return false
+	}
+	return true
+}
+func TestReloadConfigIfNeeded(t *testing.T) {
 	ph := NewProcessHunter(time.Second, "", time.Hour, nil, configPath)
 
 	err := ph.LoadConfig()
@@ -252,12 +268,16 @@ func TestReloadConfig(t *testing.T) {
 		t.Error("Error loading config file", configPath, err)
 	}
 
+	ph.limits = nil
 	b, err := ph.reloadConfigIfNeeded()
 	if err != nil {
 		t.Error("Error running reloadConfigIfNeeded", err)
 	}
 	if b == true {
 		t.Error("Unexpectedly reloaded config file")
+	}
+	if ph.limits != nil {
+		t.Error("Unexpectedly modified ph.limits")
 	}
 
 	os.Chtimes(ph.cfgPath, time.Now(), time.Now())
@@ -269,7 +289,11 @@ func TestReloadConfig(t *testing.T) {
 	if b != true {
 		t.Error("Didn't reload config file")
 	}
+	if testConfigLoadedCorrectly(t, ph) != true {
+		t.Error("didn't reload config file correctly")
+	}
 }
+
 func TestLoadConfig(t *testing.T) {
 	ph := NewProcessHunter(time.Second, "", time.Hour, nil, configPath)
 	ph.limits = []ProcessGroupDailyLimit{
@@ -284,16 +308,8 @@ func TestLoadConfig(t *testing.T) {
 		t.Error("Error loading config file", configPath, err)
 	}
 
-	if len(ph.limits) != 3 {
-		t.Error("Read", len(ph.limits), "limits, expected 3")
-	}
-
-	if len(ph.limits) != 3 ||
-		len(ph.limits[0].PG) != 2 ||
-		ph.limits[0].PG[0] != "test_process" ||
-		ph.limits[0].PG[1] != "test_process.exe" ||
-		!reflect.DeepEqual(ph.limits[0].DL, DailyLimits{"mon tue wed": time.Second}) {
-		t.Error("Config file", configPath, "not read correctly")
+	if testConfigLoadedCorrectly(t, ph) != true {
+		t.Error("didn't load config file correctly")
 	}
 }
 
