@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"bitbucket.org/ventsip/ph/lib"
+	"bitbucket.org/ventsip/ph/engine"
 )
 
 var version = "undefined"
@@ -24,7 +24,7 @@ func main() {
 	const cfgFile = "cfg.json"
 	const balanceFile = "balance.json"
 
-	ph := lib.NewProcessHunter(checkPeriod, balanceFile, savePeriod, lib.Kill, cfgFile)
+	ph := engine.NewProcessHunter(checkPeriod, balanceFile, savePeriod, engine.Kill, cfgFile)
 
 	log.Println("config:", cfgFile)
 	if err := ph.LoadConfig(); err != nil {

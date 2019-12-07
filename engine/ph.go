@@ -1,4 +1,4 @@
-package lib
+package engine
 
 import (
 	"context"
@@ -102,6 +102,8 @@ func evalDailyLimit(wd string, dl DailyLimits) (l time.Duration) {
 	return
 }
 
+// reloadConfigIfNeeded reloads the config file if it has changed
+// since last config load
 func (ph *ProcessHunter) reloadConfigIfNeeded() (bool, error) {
 	if ph.cfgPath == "" {
 		return false, nil
