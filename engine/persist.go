@@ -10,7 +10,19 @@ import (
 	"time"
 )
 
-// UnmarshalJSON unmarshales dtl using 12h35m46s duration format
+// MarshalJSON marshals dtl using 12h35m46s duration format
+func (dtl DailyLimits) MarshalJSON() ([]byte, error) {
+
+	aux := make(map[string]string)
+
+	for k, v := range dtl {
+		aux[k] = time.Duration.String(v)
+	}
+
+	return json.Marshal(aux)
+}
+
+// UnmarshalJSON unmarshals dtl using 12h35m46s duration format
 func (dtl *DailyLimits) UnmarshalJSON(data []byte) error {
 	aux := make(map[string]string)
 

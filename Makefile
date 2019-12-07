@@ -44,10 +44,10 @@ endif
 test: clean build_test
 ifeq ($(OS), Windows_NT)
 	copy testdata\$(CFG_FILE) bin
-	cd lib & $(GOTEST) -v
+	cd engine & $(GOTEST) -v
 else
 	cp testdata/$(CFG_FILE) bin
-	cd lib ; $(GOTEST) -v
+	cd engine ; $(GOTEST) -v
 endif
 
 run: clean build build_test

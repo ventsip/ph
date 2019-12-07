@@ -14,7 +14,7 @@ import (
 // DailyLimits maps days of the week to time limit
 // The key can be "*" (meaing 'any day of the week') or space separated string of
 // three-letter abbreviations of the days of week, i.e.
-// * Mon Tue Wed Thu Fri Sat Sun
+// Mon Tue Wed Thu Fri Sat Sun
 type DailyLimits map[string]time.Duration
 
 // ProcessGroupDailyLimit specifies daily time limit DL

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bitbucket.org/ventsip/ph/engine"
+	"bitbucket.org/ventsip/ph/web"
 )
 
 var version = "undefined"
@@ -52,6 +53,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go ph.Run(ctx, &wg)
+	go server.Serve(ph)
 	wg.Wait()
 
 	if err := ph.SaveBalance(); err != nil {
