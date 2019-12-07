@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 )
@@ -62,20 +63,18 @@ func isValidDailyLimitsFormat(l DailyLimits) bool {
 }
 
 // LoadConfig loads ProcessHunder configuration from path
-func (ph *ProcessHunter) LoadConfig(path string) error {
+func (ph *ProcessHunter) LoadConfig() error {
 	ph.limits = nil
 
 	// try to load into this temporary variable first
 	var limits []ProcessGroupDailyLimit
 
-	b, err := ioutil.ReadFile(path)
-
+	b, err := ioutil.ReadFile(ph.cfgPath)
 	if err != nil {
 		return err
 	}
 
 	err = json.Unmarshal(b, &limits)
-
 	if err != nil {
 		return err
 	}
@@ -88,14 +87,21 @@ func (ph *ProcessHunter) LoadConfig(path string) error {
 
 	ph.limits = limits
 
+	file, err := os.Stat(ph.cfgPath)
+	if err != nil {
+		return err
+	}
+
+	ph.cfgTime = file.ModTime()
+
 	return nil
 }
 
 // LoadBalance loads the balance from provided path
-func (ph *ProcessHunter) LoadBalance(path string) error {
+func (ph *ProcessHunter) LoadBalance() error {
 	ph.balance = make(dailyTimeBalance)
 
-	b, err := ioutil.ReadFile(path)
+	b, err := ioutil.ReadFile(ph.balancePath)
 
 	if err != nil {
 		return err
@@ -105,12 +111,12 @@ func (ph *ProcessHunter) LoadBalance(path string) error {
 }
 
 // SaveBalance saves balance to provided path
-func (ph *ProcessHunter) SaveBalance(path string) error {
+func (ph *ProcessHunter) SaveBalance() error {
 	d, err := json.MarshalIndent(ph.balance, "", "\t")
 
 	if err != nil {
 		return err
 	}
 
-	return ioutil.WriteFile(path, d, 0644)
+	return ioutil.WriteFile(ph.balancePath, d, 0644)
 }

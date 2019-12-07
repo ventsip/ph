@@ -3,6 +3,7 @@ package lib
 import (
 	"context"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -33,21 +34,29 @@ type dailyTimeBalance map[string]timeBalance
 type ProcessHunter struct {
 	limits      []ProcessGroupDailyLimit
 	balance     dailyTimeBalance
-	path        string // path is where the balance is periodically stored
+	balancePath string // path is where the balance is periodically stored
 	savePeriod  time.Duration
 	checkPeriod time.Duration
 	killer      func(pid int) error
+	cfgPath     string    // path to the config file
+	cfgTime     time.Time // populated when config file is loaded
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
-func NewProcessHunter(limits []ProcessGroupDailyLimit, checkPeriod time.Duration, path string, savePeriod time.Duration, killer func(int) error) *ProcessHunter {
+func NewProcessHunter(
+	checkPeriod time.Duration,
+	balancePath string,
+	savePeriod time.Duration,
+	killer func(int) error,
+	cfgPath string) *ProcessHunter {
 	return &ProcessHunter{
-		limits:      limits,
+		limits:      nil,
 		checkPeriod: checkPeriod,
 		balance:     make(dailyTimeBalance),
-		path:        path,
+		balancePath: balancePath,
 		savePeriod:  savePeriod,
 		killer:      killer,
+		cfgPath:     cfgPath,
 	}
 }
 
@@ -93,8 +102,37 @@ func evalDailyLimit(wd string, dl DailyLimits) (l time.Duration) {
 	return
 }
 
+func (ph *ProcessHunter) reloadConfigIfNeeded() (bool, error) {
+	if ph.cfgPath == "" {
+		return false, nil
+	}
+
+	file, err := os.Stat(ph.cfgPath)
+	if err != nil {
+		return false, err
+	}
+
+	if file.ModTime() != ph.cfgTime {
+		return true, ph.LoadConfig()
+	}
+
+	return false, nil
+}
+
 // checkProcesses updates processes time balance (addint t), checks for overtime and kills processes
 func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) error {
+
+	// 0. reload config file, if necessary
+	// ---------------
+	b, err := ph.reloadConfigIfNeeded()
+	if err != nil {
+		log.Println("error attempting to reload config")
+	}
+
+	if b {
+		log.Println("config reloaded:")
+		log.Println(ph.GetLimits())
+	}
 
 	// 1. get all processes and update their time balance for the day
 	// ---------------
@@ -156,12 +194,12 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 	}
 
 	if (lastSaved.Add(ph.savePeriod)).Before(time.Now()) {
-		if ph.path != "" {
-			log.Println("saving balance", ph.path)
-			err := ph.SaveBalance(ph.path)
+		if ph.balancePath != "" {
+			log.Println("saving balance", ph.balancePath)
+			err := ph.SaveBalance()
 
 			if err != nil {
-				log.Println("error saving balance to", ph.path, ":", err)
+				log.Println("error saving balance to", ph.balancePath, ":", err)
 			} else {
 				lastSaved = time.Now()
 			}

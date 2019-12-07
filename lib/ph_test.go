@@ -94,7 +94,7 @@ func TestEvalDailyLimit(t *testing.T) {
 }
 
 func TestCheckProcessNoConfig(t *testing.T) {
-	ph := NewProcessHunter(nil, time.Second, "", time.Hour, nil)
+	ph := NewProcessHunter(time.Second, "", time.Hour, nil, "")
 
 	err := ph.checkProcesses(context.Background(), time.Second)
 
@@ -115,9 +115,9 @@ func TestKillProcess(t *testing.T) {
 		return nil
 	}
 
-	ph := NewProcessHunter(nil, time.Second, "", time.Hour, f)
+	ph := NewProcessHunter(time.Second, "", time.Hour, f, configPath)
 
-	err = ph.LoadConfig(configPath)
+	err = ph.LoadConfig()
 	if err != nil {
 		t.Error("Error loading config file", configPath, err)
 	}
@@ -186,7 +186,7 @@ func TestPeriodicSaveBalance(t *testing.T) {
 		path        = "tmp.balance.json"
 	)
 
-	ph := NewProcessHunter(nil, checkPeriod, path, savePeriod, nil)
+	ph := NewProcessHunter(checkPeriod, path, savePeriod, nil, "")
 
 	err := os.Remove(path)
 	if fileExists(path) {
@@ -213,10 +213,9 @@ func TestPeriodicSaveBalance(t *testing.T) {
 
 func TestSaveBalance(t *testing.T) {
 
-	ph := NewProcessHunter(nil, time.Second, "", time.Hour, nil)
+	ph := NewProcessHunter(time.Second, balancePath, time.Hour, nil, configPath)
 
-	err := ph.LoadConfig(configPath)
-
+	err := ph.LoadConfig()
 	if err != nil {
 		t.Error("Error loading config file", configPath, err)
 	}
@@ -228,16 +227,14 @@ func TestSaveBalance(t *testing.T) {
 	ph.balance.add("2", "p2", time.Second)
 	ph.balance.add("2", "p2", time.Second)
 
-	err = ph.SaveBalance(balancePath)
-
-	ph.balance.add("3", "p1", time.Second)
-
+	err = ph.SaveBalance()
 	if err != nil {
 		t.Error("Error saving balance to file", balancePath, err)
 	}
 
-	err = ph.LoadBalance(balancePath)
+	ph.balance.add("3", "p1", time.Second)
 
+	err = ph.LoadBalance()
 	if err != nil {
 		t.Error("Error loading balance from file", balancePath, err)
 	}
@@ -246,17 +243,43 @@ func TestSaveBalance(t *testing.T) {
 		t.Error("Read", len(ph.balance), "days, expected 2")
 	}
 }
+
+func TestReloadConfig(t *testing.T) {
+	ph := NewProcessHunter(time.Second, "", time.Hour, nil, configPath)
+
+	err := ph.LoadConfig()
+	if err != nil {
+		t.Error("Error loading config file", configPath, err)
+	}
+
+	b, err := ph.reloadConfigIfNeeded()
+	if err != nil {
+		t.Error("Error running reloadConfigIfNeeded", err)
+	}
+	if b == true {
+		t.Error("Unexpectedly reloaded config file")
+	}
+
+	os.Chtimes(ph.cfgPath, time.Now(), time.Now())
+
+	b, err = ph.reloadConfigIfNeeded()
+	if err != nil {
+		t.Error("Error running reloadConfigIfNeeded", err)
+	}
+	if b != true {
+		t.Error("Didn't reload config file")
+	}
+}
 func TestLoadConfig(t *testing.T) {
-	l := []ProcessGroupDailyLimit{
+	ph := NewProcessHunter(time.Second, "", time.Hour, nil, configPath)
+	ph.limits = []ProcessGroupDailyLimit{
 		{[]string{"1"}, DailyLimits{"*": time.Minute}},
 		{[]string{"2"}, DailyLimits{"*": time.Minute}},
 		{[]string{"3"}, DailyLimits{"*": time.Minute}},
 		{[]string{"4"}, DailyLimits{"*": time.Minute}},
 	}
-	ph := NewProcessHunter(l, time.Second, "", time.Hour, nil)
 
-	err := ph.LoadConfig(configPath)
-
+	err := ph.LoadConfig()
 	if err != nil {
 		t.Error("Error loading config file", configPath, err)
 	}
