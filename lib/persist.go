@@ -64,8 +64,6 @@ func isValidDailyLimitsFormat(l DailyLimits) bool {
 
 // LoadConfig loads ProcessHunder configuration from path
 func (ph *ProcessHunter) LoadConfig() error {
-	ph.limits = nil
-
 	// try to load into this temporary variable first
 	var limits []ProcessGroupDailyLimit
 

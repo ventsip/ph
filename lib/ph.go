@@ -134,6 +134,13 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 		log.Println(ph.GetLimits())
 	}
 
+	// check if context is cancelled
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// 1. get all processes and update their time balance for the day
 	// ---------------
 
