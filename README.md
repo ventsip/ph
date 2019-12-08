@@ -52,6 +52,8 @@ The tool serves a trivial web UI at [localhost:8080](localhost:8080)
 The tool is usable as it is, but far from perfect. The author intends to develop it further, mostly by imporving the user experience.
 
 Top priority items are:
-- reorganize the project ot use go modules
-- make it Windows Service
-- improve web UI
+
+  * reorganize the project ot use go modules
+  * make it Windows Service
+  * improve web UI
+  
