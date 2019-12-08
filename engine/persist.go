@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -39,12 +38,6 @@ func (tb *TimeBalance) UnmarshalJSON(data []byte) error {
 		l, err := time.ParseDuration(v)
 		if err != nil {
 			break
-		} else {
-			i, err := strconv.Atoi(v)
-			if err != nil {
-				break
-			}
-			l = time.Duration(i)
 		}
 		(*tb)[k] = l
 	}
