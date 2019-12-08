@@ -6,9 +6,50 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
+
+// MarshalJSON marshals tb using 12h35m46s duration format
+func (tb TimeBalance) MarshalJSON() ([]byte, error) {
+
+	aux := make(map[string]string)
+
+	for k, v := range tb {
+		aux[k] = time.Duration.String(v)
+	}
+
+	return json.Marshal(aux)
+}
+
+// UnmarshalJSON unmarshals dtl using 12h35m46s duration format
+func (tb *TimeBalance) UnmarshalJSON(data []byte) error {
+	aux := make(map[string]string)
+
+	err := json.Unmarshal(data, &aux)
+
+	if err != nil {
+		return err
+	}
+
+	(*tb) = make(TimeBalance)
+
+	for k, v := range aux {
+		l, err := time.ParseDuration(v)
+		if err != nil {
+			break
+		} else {
+			i, err := strconv.Atoi(v)
+			if err != nil {
+				break
+			}
+			l = time.Duration(i)
+		}
+		(*tb)[k] = l
+	}
+	return err
+}
 
 // MarshalJSON marshals dtl using 12h35m46s duration format
 func (dtl DailyLimits) MarshalJSON() ([]byte, error) {
@@ -22,7 +63,7 @@ func (dtl DailyLimits) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aux)
 }
 
-// UnmarshalJSON unmarshals dtl using 12h35m46s duration format
+// UnmarshalJSON unmarshals dtl, lowercasing the key and using 12h35m46s duration format
 func (dtl *DailyLimits) UnmarshalJSON(data []byte) error {
 	aux := make(map[string]string)
 

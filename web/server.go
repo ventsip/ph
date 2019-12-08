@@ -12,7 +12,13 @@ import (
 func home(ph *engine.ProcessHunter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		b, _ := json.MarshalIndent(ph.GetLimits(), "", " ")
-		fmt.Fprintf(w, "Config:\n%s", b)
+		fmt.Fprintf(w, "Config:\n%s\n", b)
+
+		b, _ = json.MarshalIndent(ph.GetLatestPGroupsBalance(), "", " ")
+		fmt.Fprintf(w, "Process Groups:\n%s\n", b)
+		
+		b, _ = json.MarshalIndent(ph.GetLatestProcessesBalance(), "", " ")
+		fmt.Fprintf(w, "Processes:\n%s\n", b)
 	}
 }
 

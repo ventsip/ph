@@ -24,22 +24,28 @@ type ProcessGroupDailyLimit struct {
 	DL DailyLimits `json:"limits"`
 }
 
-// timeBalance maps process name to running time
-type timeBalance map[string]time.Duration
+// TimeBalance maps process name to running time
+type TimeBalance map[string]time.Duration
 
 // dailyTimeBalance maps date to process running time
-type dailyTimeBalance map[string]timeBalance
+type dailyTimeBalance map[string]TimeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime for particular day
 type ProcessHunter struct {
-	limits      []ProcessGroupDailyLimit
+	limits []ProcessGroupDailyLimit
+
 	balance     dailyTimeBalance
-	balancePath string // path is where the balance is periodically stored
-	savePeriod  time.Duration
-	checkPeriod time.Duration
-	killer      func(pid int) error
-	cfgPath     string    // path to the config file
-	cfgTime     time.Time // populated when config file is loaded
+	checkPeriod time.Duration // how often to check processes
+	balancePath string        // where balance is periodically stored
+	savePeriod  time.Duration // how often to save balance to balancePath
+
+	killer func(pid int) error
+
+	cfgPath string    // path to the config file
+	cfgTime time.Time // write time stamp of teh cfgPath. populated when config file is loaded
+
+	pgroups   TimeBalance // latest balance of monitored process groups
+	processes TimeBalance // latest balance of monitored processes
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
@@ -63,6 +69,16 @@ func NewProcessHunter(
 // GetLimits returns current daily limits (which are normally loaded from a config file)
 func (ph *ProcessHunter) GetLimits() []ProcessGroupDailyLimit {
 	return ph.limits
+}
+
+// GetLatestPGroupsBalance returns pgroups
+func (ph *ProcessHunter) GetLatestPGroupsBalance() TimeBalance {
+	return ph.pgroups
+}
+
+// GetLatestProcessesBalance returns processes
+func (ph *ProcessHunter) GetLatestProcessesBalance() TimeBalance {
+	return ph.processes
 }
 
 // savePeriod is when the balance was last saved
@@ -121,8 +137,8 @@ func (ph *ProcessHunter) reloadConfigIfNeeded() (bool, error) {
 	return false, nil
 }
 
-// checkProcesses updates processes time balance (addint t), checks for overtime and kills processes
-func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) error {
+// checkProcesses updates processes time balance (adding dt), checks for overtime and kills processes
+func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) error {
 
 	// 0. reload config file, if necessary
 	// ---------------
@@ -158,11 +174,13 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 	weekDay := weekDays[now.Weekday()]
 
 	for _, p := range pss {
-		ph.balance.add(date, p.Executable(), t)
+		ph.balance.add(date, p.Executable(), dt)
 	}
 
 	// 2. check which processes are overtime and kill them
 	// ---------------
+	ph.pgroups = make(TimeBalance)
+	ph.processes = make(TimeBalance)
 
 	d := ph.balance[date]
 	for _, pdl := range ph.limits { // iterate all processes daily limits
@@ -173,9 +191,12 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, t time.Duration) er
 
 		l := evalDailyLimit(weekDay, pdl.DL)
 
+		ph.pgroups[strings.Join(pdl.PG, ", ")] = bg
+
 		if bg > l {
 			log.Println(pdl.PG, ":", bg, "/", l)
 			for _, p := range pdl.PG { // iterate all processes in the process group
+				ph.processes[p] = d[p]
 				if d[p] > 0 {
 					log.Println(p, ":", d[p])
 					for _, a := range pss { // iterate all running processes
@@ -254,7 +275,7 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, wo
 // add adds t to the balance of the process proc for the day
 func (dr *dailyTimeBalance) add(day string, proc string, t time.Duration) {
 	if _, dOk := (*dr)[day]; !dOk {
-		(*dr)[day] = make(timeBalance)
+		(*dr)[day] = make(TimeBalance)
 	}
 
 	(*dr)[day][proc] = (*dr)[day][proc] + t
