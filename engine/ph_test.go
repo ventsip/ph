@@ -403,3 +403,28 @@ func TestSchedulerPeriod(t *testing.T) {
 	cancel()
 	wg.Wait()
 }
+
+func TestMarshalDailyLimit(t *testing.T) {
+	d := make(DailyLimits)
+
+	d["second"] = time.Second
+	d["minute"] = time.Minute
+
+	b, err := d.MarshalJSON()
+
+	if err != nil {
+		t.Error("d.MarshalJSON() failed:", err)
+	}
+
+	d = make(DailyLimits)
+
+	err = d.UnmarshalJSON(b)
+	if err != nil {
+		t.Error("d.UnmarshalJSON(b) failed:", err)
+	}
+
+	if len(d) != 2 || d["second"] != time.Second || d["minute"] != time.Minute {
+		t.Error("unmarshaled DailyLimits is not correct:", d)
+	}
+
+}
