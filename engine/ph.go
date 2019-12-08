@@ -24,6 +24,16 @@ type ProcessGroupDailyLimit struct {
 	DL DailyLimits `json:"limits"`
 }
 
+// prettyDuration only purpose is to override MarshalJSON to present time.Duration in more human friendly format
+type prettyDuration time.Duration
+
+// ProcessGroupDailyBalance describes daily limit L and balance B of process group PG
+type ProcessGroupDailyBalance struct {
+	PG []string       `json:"processes"`
+	L  prettyDuration `json:"limit"`
+	B  prettyDuration `json:"balance"`
+}
+
 // TimeBalance maps process name to running time
 type TimeBalance map[string]time.Duration
 
@@ -32,7 +42,7 @@ type dailyTimeBalance map[string]TimeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime for particular day
 type ProcessHunter struct {
-	limits []ProcessGroupDailyLimit
+	limits []ProcessGroupDailyLimit // configuration
 
 	balance     dailyTimeBalance
 	checkPeriod time.Duration // how often to check processes
@@ -44,8 +54,8 @@ type ProcessHunter struct {
 	cfgPath string    // path to the config file
 	cfgTime time.Time // write time stamp of teh cfgPath. populated when config file is loaded
 
-	pgroups   TimeBalance // latest balance of monitored process groups
-	processes TimeBalance // latest balance of monitored processes
+	pgroups   []ProcessGroupDailyBalance // latest balance of monitored process groups
+	processes TimeBalance                // latest balance of monitored processes
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
@@ -72,7 +82,7 @@ func (ph *ProcessHunter) GetLimits() []ProcessGroupDailyLimit {
 }
 
 // GetLatestPGroupsBalance returns pgroups
-func (ph *ProcessHunter) GetLatestPGroupsBalance() TimeBalance {
+func (ph *ProcessHunter) GetLatestPGroupsBalance() []ProcessGroupDailyBalance {
 	return ph.pgroups
 }
 
@@ -179,24 +189,28 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 
 	// 2. check which processes are overtime and kill them
 	// ---------------
-	ph.pgroups = make(TimeBalance)
+	ph.pgroups = make([]ProcessGroupDailyBalance, len(ph.limits))
 	ph.processes = make(TimeBalance)
 
 	d := ph.balance[date]
-	for _, pdl := range ph.limits { // iterate all processes daily limits
+	for il, pdl := range ph.limits { // iterate all processes daily limits
 		bg := time.Duration(0)
 		for _, p := range pdl.PG { // iterate all processes in the process group
 			bg = bg + d[p]
+			ph.processes[p] = d[p]
 		}
 
 		l := evalDailyLimit(weekDay, pdl.DL)
 
-		ph.pgroups[strings.Join(pdl.PG, ", ")] = bg
+		ph.pgroups[il] = ProcessGroupDailyBalance{
+			PG: pdl.PG,
+			L:  prettyDuration(l),
+			B:  prettyDuration(bg),
+		}
 
 		if bg > l {
 			log.Println(pdl.PG, ":", bg, "/", l)
 			for _, p := range pdl.PG { // iterate all processes in the process group
-				ph.processes[p] = d[p]
 				if d[p] > 0 {
 					log.Println(p, ":", d[p])
 					for _, a := range pss { // iterate all running processes

@@ -10,9 +10,13 @@ import (
 	"time"
 )
 
+// MarshalJSON marshals pgdb using 12h35m46s duration format
+func (pd prettyDuration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(time.Duration.String(time.Duration(pd)))
+}
+
 // MarshalJSON marshals tb using 12h35m46s duration format
 func (tb TimeBalance) MarshalJSON() ([]byte, error) {
-
 	aux := make(map[string]string)
 
 	for k, v := range tb {
@@ -46,7 +50,6 @@ func (tb *TimeBalance) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON marshals dtl using 12h35m46s duration format
 func (dtl DailyLimits) MarshalJSON() ([]byte, error) {
-
 	aux := make(map[string]string)
 
 	for k, v := range dtl {
