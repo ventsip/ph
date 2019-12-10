@@ -57,7 +57,6 @@ The tool is usable as it is, but far from perfect. The author intends to develop
 
 Top priority items are:
 
-  * reorganize the project ot use go modules
-  * make it Windows Service
-  * improve web UI
-  
+* reorganize the project ot use go modules
+* make it Windows Service
+* improve web UI
