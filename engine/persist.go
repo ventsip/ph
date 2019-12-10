@@ -10,9 +10,14 @@ import (
 	"time"
 )
 
+// String implements fmt.Stringer interface
+func (pd prettyDuration) String() string {
+	return time.Duration.String(time.Duration(pd))
+}
+
 // MarshalJSON marshals pgdb using 12h35m46s duration format
 func (pd prettyDuration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(time.Duration.String(time.Duration(pd)))
+	return json.Marshal(pd.String())
 }
 
 // MarshalJSON marshals tb using 12h35m46s duration format
@@ -132,7 +137,9 @@ func (ph *ProcessHunter) LoadConfig() error {
 		}
 	}
 
+	ph.limitsRWM.Lock()
 	ph.limits = limits
+	ph.limitsRWM.Unlock()
 
 	file, err := os.Stat(ph.cfgPath)
 	if err != nil {
@@ -157,8 +164,8 @@ func (ph *ProcessHunter) LoadBalance() error {
 	return json.Unmarshal(b, &ph.balance)
 }
 
-// SaveBalance saves balance to provided path
-func (ph *ProcessHunter) SaveBalance() error {
+// saveBalance saves balance to provided path
+func (ph *ProcessHunter) saveBalance() error {
 	d, err := json.MarshalIndent(ph.balance, "", "\t")
 
 	if err != nil {
@@ -166,4 +173,12 @@ func (ph *ProcessHunter) SaveBalance() error {
 	}
 
 	return ioutil.WriteFile(ph.balancePath, d, 0644)
+}
+
+// SaveBalance saves balance to provided path
+func (ph *ProcessHunter) SaveBalance() error {
+	ph.balanceRWM.RLock()
+	defer ph.balanceRWM.RUnlock()
+
+	return ph.saveBalance()
 }

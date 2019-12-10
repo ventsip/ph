@@ -42,8 +42,10 @@ type dailyTimeBalance map[string]TimeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime for particular day
 type ProcessHunter struct {
-	limits []ProcessGroupDailyLimit // configuration
+	limitsRWM sync.RWMutex
+	limits    []ProcessGroupDailyLimit // configuration
 
+	balanceRWM  sync.RWMutex
 	balance     dailyTimeBalance
 	checkPeriod time.Duration // how often to check processes
 	balancePath string        // where balance is periodically stored
@@ -54,8 +56,10 @@ type ProcessHunter struct {
 	cfgPath string    // path to the config file
 	cfgTime time.Time // write time stamp of teh cfgPath. populated when config file is loaded
 
-	pgroups   []ProcessGroupDailyBalance // latest balance of monitored process groups
-	processes TimeBalance                // latest balance of monitored processes
+	pgroupsRWM   sync.RWMutex
+	pgroups      []ProcessGroupDailyBalance // latest balance of monitored process groups
+	processesRWM sync.RWMutex
+	processes    TimeBalance // latest balance of monitored processes
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
@@ -78,16 +82,25 @@ func NewProcessHunter(
 
 // GetLimits returns current daily limits (which are normally loaded from a config file)
 func (ph *ProcessHunter) GetLimits() []ProcessGroupDailyLimit {
+	ph.limitsRWM.RLock()
+	defer ph.limitsRWM.RUnlock()
+
 	return ph.limits
 }
 
 // GetLatestPGroupsBalance returns pgroups
 func (ph *ProcessHunter) GetLatestPGroupsBalance() []ProcessGroupDailyBalance {
+	ph.pgroupsRWM.RLock()
+	defer ph.pgroupsRWM.RUnlock()
+
 	return ph.pgroups
 }
 
 // GetLatestProcessesBalance returns processes
 func (ph *ProcessHunter) GetLatestProcessesBalance() TimeBalance {
+	ph.processesRWM.RLock()
+	defer ph.processesRWM.RUnlock()
+
 	return ph.processes
 }
 
@@ -183,12 +196,22 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 	date := toText(now)
 	weekDay := weekDays[now.Weekday()]
 
+	ph.balanceRWM.Lock()
+	defer ph.balanceRWM.Unlock()
+
 	for _, p := range pss {
 		ph.balance.add(date, p.Executable(), dt)
 	}
 
 	// 2. check which processes are overtime and kill them
 	// ---------------
+	ph.limitsRWM.RLock()
+	defer ph.limitsRWM.RUnlock()
+	ph.pgroupsRWM.Lock()
+	defer ph.pgroupsRWM.Unlock()
+	ph.processesRWM.Lock()
+	defer ph.processesRWM.Unlock()
+
 	ph.pgroups = make([]ProcessGroupDailyBalance, len(ph.limits))
 	ph.processes = make(TimeBalance)
 
@@ -240,7 +263,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 	if (lastSaved.Add(ph.savePeriod)).Before(time.Now()) {
 		if ph.balancePath != "" {
 			log.Println("saving balance", ph.balancePath)
-			err := ph.SaveBalance()
+			err := ph.saveBalance()
 
 			if err != nil {
 				log.Println("error saving balance to", ph.balancePath, ":", err)

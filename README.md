@@ -35,7 +35,7 @@ The daily time limit is specified in a configuration file `cfg.json`, like this:
 
 When daily time balance of a process exceeds the specified time limit, the process is terminated.
 
-When more than one process name is specifed in `processes` group (as array or strings), then all these processes will contribute to the group's daily time balance. Processes belonging to such groups will be terminated if the time balance of the group exceeds the specified limit
+When more than one process name is specifed in `processes` group (as array or strings), then all these processes will contribute to the group's daily time balance. Processes belonging to such groups will be terminated if the time balance of the group exceeds the specified limit.
 
 Daily time limits are pecified in the `"HHhMMhSSs"` format, where `HH` is hours, `MM` - minutes and `SS` seconds. For example `3h45m30s` specifies daily time limit of 3 hours, 45 minutes and 30 seconds.
 
@@ -57,6 +57,7 @@ The tool is usable as it is, but far from perfect. The author intends to develop
 
 Top priority items are:
 
-- reorganize the project ot use go modules
-- make it Windows Service
-- improve web UI
+  * reorganize the project ot use go modules
+  * make it Windows Service
+  * improve web UI
+  

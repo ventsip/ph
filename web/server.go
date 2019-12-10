@@ -11,21 +11,36 @@ import (
 
 const port = ":8080"
 
-func home(ph *engine.ProcessHunter) http.HandlerFunc {
+func config(ph *engine.ProcessHunter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/json")
 		b, _ := json.MarshalIndent(ph.GetLimits(), "", "    ")
-		fmt.Fprintf(w, "Configuration:\n%s\n", b)
+		fmt.Fprintf(w, "%s", b)
+	}
+}
 
-		b, _ = json.MarshalIndent(ph.GetLatestPGroupsBalance(), "", "    ")
-		fmt.Fprintf(w, "Process Groups:\n%s\n", b)
+func pgbalance(ph *engine.ProcessHunter) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/json")
+		b, _ := json.MarshalIndent(ph.GetLatestPGroupsBalance(), "", "    ")
+		fmt.Fprintf(w, "%s", b)
+	}
+}
 
-		b, _ = json.MarshalIndent(ph.GetLatestProcessesBalance(), "", "    ")
-		fmt.Fprintf(w, "Monitored Processes:\n%s\n", b)
+func pbalance(ph *engine.ProcessHunter) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/json")
+		b, _ := json.MarshalIndent(ph.GetLatestProcessesBalance(), "", "    ")
+		fmt.Fprintf(w, "%s", b)
 	}
 }
 
 // Serve serves web interface for ph
 func Serve(ph *engine.ProcessHunter) {
-	http.HandleFunc("/", home(ph))
+	fs := http.FileServer(http.Dir("web"))
+	http.Handle("/", fs)
+	http.HandleFunc("/config", config(ph))
+	http.HandleFunc("/pgbalance", pgbalance(ph))
+	http.HandleFunc("/pbalance", pbalance(ph))
 	log.Fatal(http.ListenAndServe(port, nil))
 }
