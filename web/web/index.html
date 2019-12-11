@@ -5,10 +5,70 @@
     <title>Process Hunter</title>
     <meta http-equiv="refresh" content="60">
     <link rel="stylesheet" href="main.css">
-</head>
+    <!--
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2019.3.1023/styles/kendo.common-material.min.css" />
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2019.3.1023/styles/kendo.material.min.css" />
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2019.3.1023/styles/kendo.material.mobile.min.css" />
 
+    <script src="https://kendo.cdn.telerik.com/2019.3.1023/js/jquery.min.js"></script>
+    <script src="https://kendo.cdn.telerik.com/2019.3.1023/js/kendo.all.min.js"></script>
+    -->
+    </head>
+    <!--
+<style>
+    body {
+        font-family: 'Verdana';
+    }
+
+    .hunter-cell {
+        flex: 1;
+    }
+    .process-cell{
+        display: flex;
+    }
+</style>
+-->
 <body>
     <h1>Process Hunter</h1>
+<!--    <div id="grid"></div>
+    <script>
+        $(document).ready(function () {
+            $("#grid").kendoGrid({
+                dataSource: {
+                    transport: {
+                        read: "/config"
+                    },
+                    schema: {
+                        data: function (response) {
+                            return response.map(r => ({
+                                    processes: r.processes
+                                        .map(s => `<div>${s}</div>`).join(' '),
+                                    limits: Object
+                                        .keys(r.limits)
+                                        .map(s => {
+                                            return `<div class="process-cell">
+                                                <span class="hunter-cell">${s} </span>
+                                                <span class="hunter-cell">${r.limits[s]}</span>
+                                                </div>`
+                                        }).join(' ')
+                            }));
+                        }
+                    },
+                },
+                columns: [{
+                    field: "processes",
+                    template: "#= data.processes #"
+                },
+                {
+                    field: "limits",
+                    template: "#= data.limits #"
+                }
+                ]
+            });
+        });
+    </script>
+    <h1>Process Hunter</h1>
+-->
 
     <h2>Configuration</h2>
     <div id="config"></div>
