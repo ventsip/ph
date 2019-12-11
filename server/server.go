@@ -39,7 +39,7 @@ func pbalance(ph *engine.ProcessHunter) http.HandlerFunc {
 func Serve(ph *engine.ProcessHunter) {
 	mux := http.NewServeMux() // avoid using DefaultServeMux
 
-	fs := http.FileServer(http.Dir("web"))
+	fs := http.FileServer(http.Dir("web/static"))
 	mux.Handle("/", fs)
 
 	mux.HandleFunc("/config", config(ph))

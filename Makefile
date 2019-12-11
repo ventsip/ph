@@ -20,13 +20,13 @@ endif
 
 build: 
 ifeq ($(OS), Windows_NT)
-	cd cmd & $(GOBUILD) -v -o ..\bin\$(BINARY).exe -ldflags="-X main.version=$(VERSION)"
+	cd cmd\cli & $(GOBUILD) -v -o ..\..\bin\$(BINARY).exe -ldflags="-X main.version=$(VERSION)"
 	copy testdata\$(CFG_FILE) bin
-	xcopy web\web bin\web /i /y
+	xcopy server\web bin\web /i /y
 else
-	cd cmd; $(GOBUILD) -v -o ../bin/$(BINARY) -ldflags="-X main.version=$(VERSION)"
+	cd cmd/cli; $(GOBUILD) -v -o ../../bin/$(BINARY) -ldflags="-X main.version=$(VERSION)"
 	cp testdata/$(CFG_FILE) bin
-	cp -r web/web bin
+	cp -r  server/web bin
 endif
 
 build_test:
@@ -35,37 +35,37 @@ ifeq ($(OS), Windows_NT)
 	copy bin\$(TEST_BINARY).exe bin\$(TEST_BINARY1).exe
 	copy bin\$(TEST_BINARY).exe bin\$(TEST_BINARY2).exe
 	copy testdata\$(CFG_FILE) bin
-	xcopy web\web bin\web /i /y
+	xcopy server\web bin\web /i /y
 else
 	cd test_process; $(GOBUILD) -v -o ../bin/$(TEST_BINARY)
 	cp bin/$(TEST_BINARY) bin/$(TEST_BINARY1)
 	cp bin/$(TEST_BINARY) bin/$(TEST_BINARY2)
 	cp testdata/$(CFG_FILE) bin
-	cp -r web/web bin
+	cp -r server/web bin
 endif
 
 test: clean build_test
 ifeq ($(OS), Windows_NT)
 	copy testdata\$(CFG_FILE) bin
-	xcopy web\web bin\web /i /y
+	xcopy server\web bin\web /i /y
 	cd engine & $(GOTEST) -v
 else
 	cp testdata/$(CFG_FILE) bin
-	cp -r web/web bin
+	cp -r server/web bin
 	cd engine ; $(GOTEST) -v
 endif
 
 run: clean build build_test
 ifeq ($(OS), Windows_NT)
 	copy testdata\$(CFG_FILE) bin\ 
-	xcopy web\web bin\web /i /y
+	xcopy server\web bin\web /i /y
 	cd bin & start $(TEST_BINARY)
 	cd bin & start $(TEST_BINARY1)	
 	cd bin & start $(TEST_BINARY2)
 	cd bin & $(BINARY)
 else
 	cp testdata/$(CFG_FILE) bin/
-	cp -r web/web bin
+	cp -r server/web bin
 	cd bin; (./$(TEST_BINARY) &)
 	cd bin; (./$(TEST_BINARY1) &)	
 	cd bin; (./$(TEST_BINARY2) &)

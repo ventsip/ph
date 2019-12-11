@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"bitbucket.org/ventsip/ph/engine"
-	"bitbucket.org/ventsip/ph/web"
+	"bitbucket.org/ventsip/ph/server"
 )
 
 var version = "undefined"
