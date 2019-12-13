@@ -19,7 +19,7 @@ func config(ph *engine.ProcessHunter) http.HandlerFunc {
 	}
 }
 
-func pgbalance(ph *engine.ProcessHunter) http.HandlerFunc {
+func groupbalance(ph *engine.ProcessHunter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		b, _ := json.MarshalIndent(ph.GetLatestPGroupsBalance(), "", "    ")
@@ -27,7 +27,7 @@ func pgbalance(ph *engine.ProcessHunter) http.HandlerFunc {
 	}
 }
 
-func pbalance(ph *engine.ProcessHunter) http.HandlerFunc {
+func processbalance(ph *engine.ProcessHunter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		b, _ := json.MarshalIndent(ph.GetLatestProcessesBalance(), "", "    ")
@@ -43,8 +43,8 @@ func Serve(ph *engine.ProcessHunter) {
 	mux.Handle("/", fs)
 
 	mux.HandleFunc("/config", config(ph))
-	mux.HandleFunc("/pgbalance", pgbalance(ph))
-	mux.HandleFunc("/pbalance", pbalance(ph))
+	mux.HandleFunc("/groupbalance", groupbalance(ph))
+	mux.HandleFunc("/processbalance", processbalance(ph))
 
 	log.Fatal(http.ListenAndServe(port, mux))
 }
