@@ -8,21 +8,64 @@
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 </head>
 
-<body>
+<body class="w3-panel">
     <header>
         <h1>Process Hunter</h1>
         <p>Enforces time limit for OS prosesses</p>
     </header>
-    <nav class="w3-container ">
+    <nav>
         <a href="#config" class="w3-container w3-round w3-button w3-light-gray">Configuration</a>
         <a href="#groupbalance" class="w3-container w3-round w3-button w3-light-gray">Time balance of process groups</a>
         <a href="#processbalance" class="w3-container w3-round w3-button w3-light-gray">Time balance of monitored
             processes</a>
-        </div>
     </nav>
-    <section id="config">
+    <section style="display:table" id="config">
         <h2>Configuration</h2>
-        <div id="ph_config"></div>
+        <div id="ph_config">
+            <div class="w3-card w3-margin" style="float:left;">
+                <header class="w3-container w3-blue w3-bar">
+                    <div>
+                        <p class="w3-round w3-bar-item w3-margin-right w3-tag">Process 1</p>
+                        <p class="w3-round w3-bar-item w3-margin-right w3-tag">Process 2</p>
+                    </div>
+                </header>
+                <div style="float:left;">
+                    <table class="w3-table w3-bordered">
+                        <tr>
+                            <td class="w3-right-align">*</td>
+                            <td>1h30m40s</td>
+                        </tr>
+                        <tr>
+                            <td class="w3-right-align">sun mon tue</td>
+                            <td>5h</td>
+                        </tr>
+                        <tr>
+                            <td class="w3-right-align">sun mon tue</td>
+                            <td>15h</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="w3-card w3-margin" style="float:left;">
+                <header class="w3-container w3-blue w3-bar">
+                    <p class="w3-round w3-bar-item w3-margin-right w3-tag">Process 1</p>
+                    <p class="w3-round w3-bar-item w3-margin-right w3-tag">Process 2</p>
+                    <p class="w3-round w3-bar-item w3-margin-right w3-tag">Process 3</p>
+                </header>
+                <div style="float:left;">
+                    <table class="w3-table w3-bordered">
+                        <tr>
+                            <td class="w3-right-align">*</td>
+                            <td>1h30m40s</td>
+                        </tr>
+                        <tr>
+                            <td class="w3-right-align">sun mon tue</td>
+                            <td>5h</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
     </section>
     <section id="groupbalance">
         <h2>Process Group Balance</h2>
