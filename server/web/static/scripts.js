@@ -1,40 +1,67 @@
-const config = document.getElementById('config');
-
-const container = document.createElement('div');
-container.setAttribute('class', 'container');
-config.appendChild(container);
-
 var requestCfg = new XMLHttpRequest();
 requestCfg.open('GET', '/config', true);
-requestCfg.onload = function () {
-    var dtls = JSON.parse(this.response);
-    tbl = document.createElement('table');
-    if (requestCfg.status >= 200 && requestCfg.status < 400) {
-        dtls.forEach(dtl => {
-            tr = tbl.insertRow()
-            td = tr.insertCell();
-            tblInner = document.createElement('table')
-            dtl.processes.forEach(n => {
-                tblInner.insertRow().insertCell().innerHTML = n
-            });
-            td.appendChild(tblInner)
 
-            td = tr.insertCell();
-            tblInner = document.createElement('table')
-            Object.keys(dtl.limits).forEach(day => {
-                tr = tblInner.insertRow()
-                tr.insertCell().innerHTML = day
-                tr.insertCell().innerHTML = dtl.limits[day]
-            });
-            td.appendChild(tblInner)
+function limitsList(limits) {
+    var c = document.createElement('div')
+    c.classList.add("w3-container", "w3-cell-row")
+
+    Object.keys(limits).forEach(key => {
+        var p = document.createElement('p')
+        p.classList.add("w3-round", "w3-container", "w3-cell")
+        p.innerText = key
+        c.appendChild(p)
+
+        p = document.createElement('p')
+        p.classList.add("w3-round", "w3-container", "w3-cell")
+        p.innerText = limits[key]
+        c.appendChild(p)
+    })
+
+    return c
+}
+
+function processList(processes) {
+    var c = document.createElement('div')
+    c.classList.add("w3-container", "w3-cell-row")
+
+    processes.forEach(proc => {
+        var p = document.createElement('p')
+        p.classList.add("w3-round", "w3-container", "w3-cell")
+        p.innerText = proc
+
+        c.appendChild(p)
+    })
+
+    return c
+}
+
+function ConfigCard(dtl) {
+    var c = document.createElement('div')
+    c.classList.add("w3-card-4")
+
+    var e = document.createElement('header')
+    e.classList.add("w3-container", "w3-blue", "w3-cell")
+    e.appendChild(processList(dtl.processes))
+    c.appendChild(e)
+
+    e = document.createElement('div')
+    e.classList.add("w3-container")
+    e.appendChild(limitsList(dtl.limits))
+    c.appendChild(e)
+
+    return c
+}
+
+requestCfg.onload = function () {
+    const config = document.getElementById('ph_config');
+    var dtls = JSON.parse(this.response);
+    if (requestCfg.status >= 200 && requestCfg.status < 400) {
+        config.classList.add("w3-cell-row")
+        dtls.forEach(dtl => {
+            config.appendChild(ConfigCard(dtl));
         });
     } else {
-        const e = document.createElement('div');
-        e.textContent = `Error retreiving configuration`;
-        config.appendChild(e);
-    }
-
-    config.appendChild(tbl)
-
+        config.innerText = `Error retreiving configuration`;
+    };
 }
 requestCfg.send();
