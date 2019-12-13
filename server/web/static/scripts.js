@@ -2,19 +2,21 @@ var requestCfg = new XMLHttpRequest();
 requestCfg.open('GET', '/config', true);
 
 function limitsList(limits) {
-    var c = document.createElement('div')
-    c.classList.add("w3-container", "w3-cell-row")
+    var c = document.createElement('table')
+    c.classList.add("w3-table", "w3-bordered")
 
     Object.keys(limits).forEach(key => {
-        var p = document.createElement('p')
-        p.classList.add("w3-round", "w3-container", "w3-cell")
-        p.innerText = key
-        c.appendChild(p)
+        var tr = document.createElement('tr')
+        var td = document.createElement('td')
+        td.classList.add("w3-right-align")
+        td.innerText = key
+        tr.appendChild(td)
 
-        p = document.createElement('p')
-        p.classList.add("w3-round", "w3-container", "w3-cell")
-        p.innerText = limits[key]
-        c.appendChild(p)
+        td = document.createElement('td')
+        td.innerText = limits[key]
+        tr.appendChild(td)
+
+        c.appendChild(tr)
     })
 
     return c
@@ -22,11 +24,10 @@ function limitsList(limits) {
 
 function processList(processes) {
     var c = document.createElement('div')
-    c.classList.add("w3-container", "w3-cell-row")
 
     processes.forEach(proc => {
         var p = document.createElement('p')
-        p.classList.add("w3-round", "w3-container", "w3-cell")
+        p.classList.add("w3-round", "w3-bar-item", "w3-margin-right", "w3-tag")
         p.innerText = proc
 
         c.appendChild(p)
@@ -37,15 +38,16 @@ function processList(processes) {
 
 function ConfigCard(dtl) {
     var c = document.createElement('div')
-    c.classList.add("w3-card-4")
+    c.classList.add("w3-card", "w3-margin")
+    c.style.float = "left"
 
     var e = document.createElement('header')
-    e.classList.add("w3-container", "w3-blue", "w3-cell")
+    e.classList.add("w3-container", "w3-blue", "w3-bar")
     e.appendChild(processList(dtl.processes))
     c.appendChild(e)
 
     e = document.createElement('div')
-    e.classList.add("w3-container")
+    e.style.float = "left"
     e.appendChild(limitsList(dtl.limits))
     c.appendChild(e)
 
@@ -54,9 +56,9 @@ function ConfigCard(dtl) {
 
 requestCfg.onload = function () {
     const config = document.getElementById('ph_config');
+    config.innerHTML = "" // wipe out the element
     var dtls = JSON.parse(this.response);
     if (requestCfg.status >= 200 && requestCfg.status < 400) {
-        config.classList.add("w3-cell-row")
         dtls.forEach(dtl => {
             config.appendChild(ConfigCard(dtl));
         });
