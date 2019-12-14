@@ -13,10 +13,11 @@
         <h1>Process Hunter</h1>
         <p>Enforces time limit for OS prosesses</p>
     </header>
-    <nav>
-        <a href="#config" class="w3-container w3-round w3-button w3-light-gray">Configuration</a>
-        <a href="#groupbalance" class="w3-container w3-round w3-button w3-light-gray">Time balance of process groups</a>
-        <a href="#processbalance" class="w3-container w3-round w3-button w3-light-gray">Time balance of monitored
+    <nav class="w3-container w3-bar w3-indigo">
+        <a href="#config" class="w3-container w3-bar-item">Configuration</a>
+        <a href="#groupbalance" class="w3-container w3-bar-item">Time balance of process
+            groups</a>
+        <a href="#processbalance" class="w3-container w3-bar-item">Time balance of monitored
             processes</a>
     </nav>
     <section style="display:table" id="config">
@@ -25,8 +26,8 @@
             <div class="w3-card w3-margin" style="float:left;">
                 <header class="w3-container w3-blue w3-bar">
                     <div>
-                        <p class="w3-round w3-bar-item w3-margin-right w3-tag">Process 1</p>
-                        <p class="w3-round w3-bar-item w3-margin-right w3-tag">Process 2</p>
+                        <p class="w3-round w3-bar-item w3-margin w3-tag">Process 1</p>
+                        <p class="w3-round w3-bar-item w3-margin w3-tag">Process 2</p>
                     </div>
                 </header>
                 <div style="float:left;">
@@ -67,16 +68,18 @@
             </div>
         </div>
     </section>
-    <section id="groupbalance">
+    <section style="display:table" id="groupbalance">
         <h2>Process Group Balance</h2>
         <div id="ph_groupbalance"></div>
     </section>
-    <section id="processbalance">
+    <section style="display:table" id="processbalance">
         <h2>Process Balance</h2>
         <div id="ph_processbalance"></div>
     </section>
-    <footer>
-        <p>Source code available <a href="https://bitbucket.org/ventsip/ph/src/master/" target="_blank">here</a></p>
+    <footer class="w3-bar w3-indigo">
+        <p class="w3-bar-item w3-right">
+            Source code available <a href="https://bitbucket.org/ventsip/ph/src/master/" target="_blank">here</a>
+        </p>
     </footer>
     <script src="scripts.js"></script>
 </body>
