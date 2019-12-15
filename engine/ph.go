@@ -25,7 +25,9 @@ type ProcessGroupDailyLimit struct {
 }
 
 // prettyDuration only purpose is to override MarshalJSON to present time.Duration in more human friendly format
-type prettyDuration time.Duration
+type prettyDuration struct {
+	time.Duration
+}
 
 // ProcessGroupDailyBalance describes daily limit L and balance B of process group PG
 type ProcessGroupDailyBalance struct {
@@ -227,8 +229,8 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 
 		ph.pgroups[il] = ProcessGroupDailyBalance{
 			PG: pdl.PG,
-			L:  prettyDuration(l),
-			B:  prettyDuration(bg),
+			L:  prettyDuration{l},
+			B:  prettyDuration{bg},
 		}
 
 		if bg > l {

@@ -10,11 +10,6 @@ import (
 	"time"
 )
 
-// String implements fmt.Stringer interface
-func (pd prettyDuration) String() string {
-	return time.Duration.String(time.Duration(pd))
-}
-
 // MarshalJSON marshals pgdb using 12h35m46s duration format
 func (pd prettyDuration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(pd.String())
