@@ -81,7 +81,7 @@ function requestCfg() {
 
 requestCfg()
 
-function parseDuration(d) {
+function toSeconds(d) {
     // regex for xxHxxMxxS format
     const regex = /^(\d{1,2}h)?(\d{1,2}m)?(\d{1,2}(\.\d*)?s)?$/i
     if (regex.test(d)) {
@@ -100,9 +100,9 @@ function limitAndBalance(l, b) {
     let p = document.createElement('div')
     p.classList.add("w3-container", "w3-round-xlarge")
     let progress = 100 // in case limit is 0
-    let lnmb = parseDuration(l)
+    let lnmb = toSeconds(l)
     if (lnmb > 0) {
-        progress = Math.min(100, 100 * parseDuration(b) / parseDuration(l))
+        progress = Math.min(100, 100 * toSeconds(b) / toSeconds(l))
     }
 
     let clr = "w3-light-green"
