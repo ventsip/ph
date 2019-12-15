@@ -158,7 +158,7 @@ requestProcessGroupBalance()
 
 function processProcB(data, root) {
     let t = document.createElement('table')
-    t.classList.add("w3-table", "w3-margin", "w3-bordered")
+    t.classList.add("w3-card", "w3-margin", "w3-table", "w3-bordered")
     t.style.float = "left"
 
     Object.keys(data).forEach(key => {
