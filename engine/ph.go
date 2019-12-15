@@ -167,7 +167,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 	// ---------------
 	b, err := ph.reloadConfigIfNeeded()
 	if err != nil {
-		log.Println("error attempting to reload config")
+		log.Println("error attempting to reload config:", err)
 	}
 
 	if b {
