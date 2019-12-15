@@ -29,14 +29,14 @@ func main() {
 
 	log.Println("config:", cfgFile)
 	if err := ph.LoadConfig(); err != nil {
-		log.Println("error loading config file", err)
+		log.Println("error loading config file:", err)
 		return
 	}
 
 	log.Println(ph.GetLimits())
 
 	if err := ph.LoadBalance(); err != nil {
-		log.Println("error loading balance file", err)
+		log.Println("error loading balance file:", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

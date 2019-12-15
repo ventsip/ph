@@ -4,6 +4,7 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
 BINARY=ph
+BINARY_SVC=phsvc
 VERSION=$(shell git describe --long --always --dirty)
 CFG_FILE=cfg.json
 TEST_BINARY=test_process
@@ -20,9 +21,11 @@ else
 	rm -f -r bin
 endif
 
-build: 
+build:
 ifeq ($(OS), Windows_NT)
 	cd cmd\cli & $(GOBUILD) -v -o ..\..\bin\$(BINARY).exe -ldflags="-X main.version=$(VERSION)"
+	cd cmd\winsvc & $(GOBUILD) -v -o ..\..\bin\$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
+
 	copy testdata\$(CFG_FILE) bin
 	$(COPY_WEB_FOLDER_WIN)
 else
