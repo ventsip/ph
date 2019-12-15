@@ -53,7 +53,8 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go ph.Run(ctx, &wg)
-	go server.Serve(ph)
+	wg.Add(1)
+	go server.Serve(ctx, &wg, ph)
 	wg.Wait()
 
 	if err := ph.SaveBalance(); err != nil {

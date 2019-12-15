@@ -1,10 +1,13 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
+	"time"
 
 	"bitbucket.org/ventsip/ph/engine"
 )
@@ -36,7 +39,13 @@ func processbalance(ph *engine.ProcessHunter) http.HandlerFunc {
 }
 
 // Serve serves web interface for ph
-func Serve(ph *engine.ProcessHunter) {
+func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter) {
+	defer func() {
+		if wg != nil {
+			wg.Done()
+		}
+	}()
+
 	mux := http.NewServeMux() // avoid using DefaultServeMux
 
 	fs := http.FileServer(http.Dir("web/static"))
@@ -46,5 +55,15 @@ func Serve(ph *engine.ProcessHunter) {
 	mux.HandleFunc("/groupbalance", groupbalance(ph))
 	mux.HandleFunc("/processbalance", processbalance(ph))
 
-	log.Fatal(http.ListenAndServe(port, mux))
+	s := http.Server{Addr: port, Handler: mux}
+
+	log.Println("starting service")
+	go s.ListenAndServe()
+
+	<-ctx.Done()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	s.Shutdown(ctx)
+	log.Println("service shut down.")
 }
