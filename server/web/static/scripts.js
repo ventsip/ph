@@ -135,7 +135,7 @@ function limitAndBalance(l, b) {
             clr = "w3-yellow"
         }
     }
-    p.classList.add(clr)
+    p.classList.add(clr, "w3-center")
     p.style.width = progress + "%"
     p.innerText = b + "/" + l
 
