@@ -222,7 +222,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 		bg := time.Duration(0)
 		for _, p := range pdl.PG { // iterate all processes in the process group
 			bg = bg + d[p]
-			ph.processes[p] = d[p]
+			ph.processes[p] = d[p].Round(time.Second)
 		}
 
 		l := evalDailyLimit(weekDay, pdl.DL)
@@ -230,7 +230,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 		ph.pgroups[il] = ProcessGroupDailyBalance{
 			PG: pdl.PG,
 			L:  prettyDuration{l},
-			B:  prettyDuration{bg},
+			B:  prettyDuration{bg.Round(time.Second)},
 		}
 
 		if bg > l {
