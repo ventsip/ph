@@ -37,12 +37,30 @@ function limitsList(limits) {
     return t
 }
 
+function registerHover(e, name) {
+    let cn = "ph-" + name
+    e.classList.add(cn)
+    e.onmouseover = () => {
+        let x = document.getElementsByClassName(cn);
+        for (let i = 0; i < x.length; i++) {
+            x[i].classList.add("w3-blue-grey");
+        }
+    }
+    e.onmouseleave = () => {
+        let x = document.getElementsByClassName(cn);
+        for (let i = 0; i < x.length; i++) {
+            x[i].classList.remove("w3-blue-grey");
+        }
+    }
+}
+
 function processList(processes) {
     let c = document.createElement('div')
 
     processes.forEach(proc => {
         let p = document.createElement('p')
         p.classList.add("w3-round", "w3-bar-item", "w3-margin", "w3-tag")
+        registerHover(p, proc)
         p.innerText = proc
 
         c.appendChild(p)
@@ -165,6 +183,8 @@ function processProcB(data, root) {
         let r = document.createElement('tr')
         let d = document.createElement('td')
         d.classList.add("w3-right-align", "w3-round", "w3-tag")
+        d.style.float = "right"
+        registerHover(d, key)
         d.innerText = key
         r.appendChild(d)
 
