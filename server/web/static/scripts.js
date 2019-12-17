@@ -209,3 +209,17 @@ function requestProcessBalance() {
 
 requestProcessBalance();
 setInterval("requestProcessBalance();", refreshPeriod);
+
+function requestVersion() {
+    let r = new XMLHttpRequest();
+    r.open('GET', '/version', true);
+
+    r.onload = function () {
+        const root = document.getElementById('ph_version');
+        root.innerHTML = this.response
+    };
+
+    r.send();
+}
+
+requestVersion();
