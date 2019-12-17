@@ -1,3 +1,4 @@
+"use strict";
 var refreshPeriod = 60000;
 
 function requestData(ep, rootID, processData) {
