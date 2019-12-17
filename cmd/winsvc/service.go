@@ -71,7 +71,7 @@ func (m *myservice) Execute(args []string, r <-chan svc.ChangeRequest, changes c
 	wg.Add(1)
 	go ph.Run(ctx, &wg)
 	wg.Add(1)
-	go server.Serve(ctx, &wg, ph)
+	go server.Serve(ctx, &wg, ph, version)
 
 	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
 

@@ -54,7 +54,7 @@ func main() {
 	wg.Add(1)
 	go ph.Run(ctx, &wg)
 	wg.Add(1)
-	go server.Serve(ctx, &wg, ph)
+	go server.Serve(ctx, &wg, ph, version)
 	wg.Wait()
 
 	if err := ph.SaveBalance(); err != nil {

@@ -38,8 +38,14 @@ func processbalance(ph *engine.ProcessHunter) http.HandlerFunc {
 	}
 }
 
+func version(ver string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, ver)
+	}
+}
+
 // Serve serves web interface for ph
-func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter) {
+func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ver string) {
 	defer func() {
 		if wg != nil {
 			wg.Done()
@@ -50,7 +56,7 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter) {
 
 	fs := http.FileServer(http.Dir("web/static"))
 	mux.Handle("/", fs)
-
+	mux.HandleFunc("/version", version(ver))
 	mux.HandleFunc("/config", config(ph))
 	mux.HandleFunc("/groupbalance", groupbalance(ph))
 	mux.HandleFunc("/processbalance", processbalance(ph))
