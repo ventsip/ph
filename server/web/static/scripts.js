@@ -1,5 +1,5 @@
 "use strict";
-let refreshPeriod = 60000;
+const refreshPeriod = 60000;
 
 function requestData(ep, rootID, processData) {
     let r = new XMLHttpRequest();
