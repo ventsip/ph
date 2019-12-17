@@ -18,7 +18,7 @@ function requestData(ep, rootID, processData) {
     r.send();
 }
 
-function limitsList(limits) {
+function genLimits(limits) {
     let t = document.createElement('table');
     t.classList.add("w3-table", "w3-bordered");
 
@@ -72,7 +72,7 @@ function processList(processes) {
     return c
 }
 
-function configCard(dtl) {
+function genConfigCard(dtl) {
     let c = document.createElement('div');
     c.classList.add("w3-card", "w3-margin");
     c.style.float = "left";
@@ -84,7 +84,7 @@ function configCard(dtl) {
 
     e = document.createElement('div');
     e.style.float = "left";
-    e.appendChild(limitsList(dtl.limits));
+    e.appendChild(genLimits(dtl.limits));
     c.appendChild(e);
 
     return c;
@@ -92,7 +92,7 @@ function configCard(dtl) {
 
 function processConfig(data, root) {
     data.forEach(dtl => {
-        root.appendChild(configCard(dtl));
+        root.appendChild(genConfigCard(dtl));
     })
 }
 
@@ -115,7 +115,7 @@ function toSeconds(d) {
     }
 }
 
-function limitAndBalance(l, b) {
+function genLimitAndBalance(l, b) {
     let pb = document.createElement('div');
     pb.classList.add("w3-dark-grey", "w3-round-xlarge");
 
@@ -148,7 +148,7 @@ function limitAndBalance(l, b) {
     return pb;
 }
 
-function pgbCard(pgb) {
+function genPgbCard(pgb) {
     let c = document.createElement('div');
     c.classList.add("w3-card", "w3-margin");
     c.style.float = "left";
@@ -160,7 +160,7 @@ function pgbCard(pgb) {
 
     e = document.createElement('div');
     e.classList.add("w3-container", "w3-margin");
-    e.appendChild(limitAndBalance(pgb.limit, pgb.balance));
+    e.appendChild(genLimitAndBalance(pgb.limit, pgb.balance));
     c.appendChild(e);
 
     return c;
@@ -168,7 +168,7 @@ function pgbCard(pgb) {
 
 function processPGB(data, root) {
     data.forEach(pgb => {
-        root.appendChild(pgbCard(pgb));
+        root.appendChild(genPgbCard(pgb));
     })
 }
 
