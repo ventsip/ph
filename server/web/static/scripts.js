@@ -1,3 +1,5 @@
+var refreshPeriod = 60000;
+
 function requestData(ep, rootID, processData) {
     let r = new XMLHttpRequest();
     r.open('GET', ep, true);
@@ -98,6 +100,7 @@ function requestCfg() {
 }
 
 requestCfg()
+setInterval("requestCfg();", refreshPeriod);
 
 function toSeconds(d) {
     // regex for xxHxxMxxS format
@@ -173,6 +176,7 @@ function requestProcessGroupBalance() {
 }
 
 requestProcessGroupBalance()
+setInterval("requestProcessGroupBalance();", refreshPeriod);
 
 function processProcB(data, root) {
     let t = document.createElement('table');
@@ -203,3 +207,4 @@ function requestProcessBalance() {
 }
 
 requestProcessBalance();
+setInterval("requestProcessBalance();", refreshPeriod);
