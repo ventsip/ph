@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -96,12 +97,22 @@ func isValidDailyLimitsFormat(l DailyLimits) bool {
 
 		for _, w := range words {
 			valid := false
+
+			// week days
 			for _, d := range weekDays {
 				if w == d {
 					valid = true
 					break
 				}
 			}
+
+			// dates
+			match, err := regexp.MatchString(`^\d{1,4}-\d{1,2}-\d{1,2}$`, w)
+			if match && err == nil {
+				valid = true
+				break
+			}
+
 			if !valid {
 				return false
 			}

@@ -5,7 +5,8 @@
             "test_process.exe"
         ],
         "limits": {
-            "Mon tue WED": "1s"
+            "Mon tue WED": "1s",
+            "1999-12-25": "1s"
         }
     },
     {

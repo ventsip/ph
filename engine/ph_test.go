@@ -50,11 +50,15 @@ func TestIsValidDailyLimitsFormat(t *testing.T) {
 		"*",
 		"mon", "tue", "wed", "thu", "fri", "sat", "sun",
 		"mon tue wed thu fri sat sun",
-	}
+		"2019-12-22",
+		"2019-1-1",
+		"2019-01-01",
+		"2019-01-01 2019-1-1 2018-2-3",
+		"2019-01-01 mon"}
 
 	for _, v := range valid {
 		if !isValidDailyLimitsFormat(DailyLimits{v: time.Second}) {
-			t.Error("couldn't recognize", v, "as valid week days string")
+			t.Error("couldn't recognize", v, "as valid week day(s) or date(s) specification")
 		}
 	}
 
@@ -65,7 +69,11 @@ func TestIsValidDailyLimitsFormat(t *testing.T) {
 		"mon *",
 		"pon", "vto",
 		"pon vto wed thu fri sat sun",
-	}
+		"2019/2/2",
+		"yy-mm-dd",
+		"2019-031-01",
+		"2039-01-301",
+		"20319-01-01"}
 	for _, inv := range invalid {
 		if isValidDailyLimitsFormat(DailyLimits{inv: time.Second}) {
 			t.Error("accepted", inv, "as valid week days string")
@@ -74,21 +82,39 @@ func TestIsValidDailyLimitsFormat(t *testing.T) {
 }
 
 func TestEvalDailyLimit(t *testing.T) {
-	dl := DailyLimits{"*": time.Second, "mon tue": time.Minute, "mon": time.Hour}
-	if evalDailyLimit("mon", dl) != time.Hour {
-		t.Error("wrong daily limit when day is individually specified")
+	dl := DailyLimits{
+		"*":                     time.Second,
+		"mon tue":               time.Minute * 2,
+		"mon":                   time.Minute,
+		"1972-10-16 1973-05-17": time.Hour * 2,
+		"1972-10-16":            time.Hour,
 	}
 
-	if evalDailyLimit("tue", dl) != time.Minute {
-		t.Error("wrong daily limit when day is listed in a group")
+	if evalDailyLimit("2019-12-21", "wed", dl) != time.Second {
+		t.Error("wrong daily limit when the day is not listed in a group or individually, but matched by \"*\"")
 	}
 
-	if evalDailyLimit("wed", dl) != time.Second {
-		t.Error("wrong daily limit when day is not listed in a group or individually, but matched by \"*\"")
+	// week days
+	if evalDailyLimit("2019-12-21", "mon", dl) != time.Minute {
+		t.Error("wrong daily limit when day of week is individually specified")
 	}
 
+	if evalDailyLimit("2019-12-21", "tue", dl) != time.Minute*2 {
+		t.Error("wrong daily limit when day of week is listed in a group")
+	}
+
+	// dates
+	if evalDailyLimit("1972-10-16", "wed", dl) != time.Hour {
+		t.Error("wrong daily limit when date is individually specified")
+	}
+
+	if evalDailyLimit("1973-05-17", "wed", dl) != time.Hour*2 {
+		t.Error("wrong daily limit when date is listed in a group")
+	}
+
+	// no match
 	dl = DailyLimits{"tue": time.Second}
-	if evalDailyLimit("mon", dl) != time.Hour*25 {
+	if evalDailyLimit("2019-12-21", "mon", dl) != noLimit {
 		t.Error("wrong daily limit when time limit cannot be evaluated")
 	}
 }
@@ -254,7 +280,7 @@ func testConfigLoadedCorrectly(t *testing.T, ph *ProcessHunter) bool {
 		len(ph.limits[0].PG) != 2 ||
 		ph.limits[0].PG[0] != "test_process" ||
 		ph.limits[0].PG[1] != "test_process.exe" ||
-		!reflect.DeepEqual(ph.limits[0].DL, DailyLimits{"mon tue wed": time.Second}) {
+		!reflect.DeepEqual(ph.limits[0].DL, DailyLimits{"mon tue wed": time.Second, "1999-12-25": time.Second}) {
 		t.Error("Config file", configPath, "not read correctly")
 		return false
 	}

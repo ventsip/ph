@@ -11,6 +11,8 @@ import (
 	"github.com/mitchellh/go-ps"
 )
 
+const noLimit = time.Hour * 25
+
 // DailyLimits maps days of the week to time limit
 // The key can be "*" (meaing 'any day of the week') or space separated string of
 // three-letter abbreviations of the days of week, i.e.
@@ -124,20 +126,36 @@ var weekDays = [...]string{
 // - specific day, e.g. "wed"
 // - a day from a list: "mon wed fri"
 // - any day "*"
-func evalDailyLimit(wd string, dl DailyLimits) (l time.Duration) {
-	l = time.Hour * 25 // effectively - no limit
-	ingoreAny := false
+func evalDailyLimit(dt string, wd string, dl DailyLimits) (l time.Duration) {
+	l = noLimit // effectively - no limit
+	dateInList := false
+	dayInList := false
+	dayMatch := false
 	for k, v := range dl {
-		if k == wd {
+		if k == dt { // date match - end of search
 			l = v
 			break
 		}
-		if strings.Contains(k, wd) {
+		if strings.Contains(k, dt) { // date in list
 			l = v
-			ingoreAny = true
+			dateInList = true
 		}
-		if k == "*" && !ingoreAny {
-			l = v
+		if !dateInList {
+			if k == wd { // day of week match
+				l = v
+				dayMatch = true
+			}
+			if !dayMatch {
+				if strings.Contains(k, wd) { // day in list
+					l = v
+					dayInList = true
+				}
+				if !dayInList {
+					if k == "*" {
+						l = v
+					}
+				}
+			}
 		}
 	}
 	return
@@ -225,7 +243,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 			ph.processes[p] = d[p].Round(time.Second)
 		}
 
-		l := evalDailyLimit(weekDay, pdl.DL)
+		l := evalDailyLimit(date, weekDay, pdl.DL)
 
 		ph.pgroups[il] = ProcessGroupDailyBalance{
 			PG: pdl.PG,
