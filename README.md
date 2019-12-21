@@ -39,19 +39,19 @@ When more than one process names are specifed in `processes` group (as array or 
 
 Daily time limits are in the `"HHhMMhSSs"` format, where `HH` is hours, `MM` - minutes and `SS` seconds. For example `3h45m30s` is a daily time limit of 3 hours, 45 minutes and 30 seconds.
 
-Daily time limits `"limits"` are can be assigned to one of these specifications:
+Daily time limits `"limits"` can be assigned to:
 
 - any day `"*"`
 - one or more specific days of the week or concrete dates, for example:
-  - `"tue"` - for Tuesdays
-  - `"2019-10-16"` - for Oct 16th, 2019
-  - `"sat sun 2019-12-25"` - for Sundays, Saturdays or specifically for Dec 25th 2019
+  * `"tue"` - for Tuesdays
+  * `"2019-10-16"` - for Oct 16th, 2019
+  * `"sat sun 2019-12-25"` - for Sundays, Saturdays or specifically for Dec 25th 2019
 
 If a particular day matches more than one specification, then the most-concrete specification will be applied, in the following priority order:
 
 - concrete date, e.g. `"2019-10-16"`
 - concrete date from a `list`, e.g. `"sat sun 2019-12-25"`
-- concreate day of week, e.g. `"mon"`
+ - concreate day of week, e.g. `"mon"`
 - concreate day of week from a `list`, e.g. `"mon tue"`
 - any day, i.e. `"*"`
 
