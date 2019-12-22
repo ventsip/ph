@@ -118,7 +118,6 @@ func isValidDailyLimitsFormat(l DailyLimits) bool {
 			}
 		}
 	}
-
 	return true
 }
 
@@ -145,6 +144,7 @@ func (ph *ProcessHunter) LoadConfig() error {
 
 	ph.limitsRWM.Lock()
 	ph.limits = limits
+	ph.hashLimits()
 	ph.limitsRWM.Unlock()
 
 	file, err := os.Stat(ph.cfgPath)

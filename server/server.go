@@ -17,7 +17,8 @@ const port = ":8080"
 func config(ph *engine.ProcessHunter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		b, _ := json.MarshalIndent(ph.GetLimits(), "", "    ")
+		l, _ := ph.GetLimits()
+		b, _ := json.MarshalIndent(l, "", "    ")
 		fmt.Fprintf(w, "%s", b)
 	}
 }

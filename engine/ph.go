@@ -2,6 +2,8 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
+	"hash/crc32"
 	"log"
 	"os"
 	"strings"
@@ -46,8 +48,9 @@ type dailyTimeBalance map[string]TimeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime for particular day
 type ProcessHunter struct {
-	limitsRWM sync.RWMutex
-	limits    []ProcessGroupDailyLimit // configuration
+	limitsRWM  sync.RWMutex
+	limits     []ProcessGroupDailyLimit // configuration
+	limitsHash uint32                   // checksum of the loaded configuration (limits)
 
 	balanceRWM  sync.RWMutex
 	balance     dailyTimeBalance
@@ -58,7 +61,7 @@ type ProcessHunter struct {
 	killer func(pid int) error
 
 	cfgPath string    // path to the config file
-	cfgTime time.Time // write time stamp of teh cfgPath. populated when config file is loaded
+	cfgTime time.Time // write time stamp of the cfgPath. populated when config file is loaded
 
 	pgroupsRWM   sync.RWMutex
 	pgroups      []ProcessGroupDailyBalance // latest balance of monitored process groups
@@ -74,7 +77,6 @@ func NewProcessHunter(
 	killer func(int) error,
 	cfgPath string) *ProcessHunter {
 	return &ProcessHunter{
-		limits:      nil,
 		checkPeriod: checkPeriod,
 		balance:     make(dailyTimeBalance),
 		balancePath: balancePath,
@@ -84,12 +86,24 @@ func NewProcessHunter(
 	}
 }
 
-// GetLimits returns current daily limits (which are normally loaded from a config file)
-func (ph *ProcessHunter) GetLimits() []ProcessGroupDailyLimit {
+// crc64Table is used in crc64.Checksum
+var crc32Table = crc32.MakeTable(crc32.Koopman)
+
+// hashLimits hashes
+func (ph *ProcessHunter) hashLimits() {
+	b, err := json.Marshal(ph.limits)
+	if err != nil {
+		log.Panicln("cannot marshal limits to json")
+	}
+	ph.limitsHash = crc32.Checksum(b, crc32Table)
+}
+
+// GetLimits returns current daily limits (which are normally loaded from a config file) and its hash
+func (ph *ProcessHunter) GetLimits() ([]ProcessGroupDailyLimit, uint32) {
 	ph.limitsRWM.RLock()
 	defer ph.limitsRWM.RUnlock()
 
-	return ph.limits
+	return ph.limits, ph.limitsHash
 }
 
 // GetLatestPGroupsBalance returns pgroups
