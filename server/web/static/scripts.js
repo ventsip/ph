@@ -2,106 +2,67 @@
 const refreshPeriod = 60000;
 
 function requestData(ep, rootID, processData) {
-    let r = new XMLHttpRequest();
-    r.open('GET', ep, true);
-
-    r.onload = function () {
-        const root = document.getElementById(rootID);
-        root.innerHTML = ""; // wipe out the element
-        let d = JSON.parse(this.response);
-        if (r.status >= 200 && r.status < 400) {
-            processData(d, root);
-        } else {
-            root.innerText = `Error retreiving data`;
-        };
-    }
-    r.send();
+    $.getJSON(ep, (d, s) => {
+        if (s == "success") {
+            processData(d, $('#' + $.escapeSelector(rootID)).html(""));
+        }
+        else {
+            $('#' + $.escapeSelector(rootID)).text("Error retreiving data");
+        }
+    });
 }
 
 function genLimits(limits) {
-    let t = document.createElement('table');
-    t.classList.add("w3-table", "w3-bordered");
-
+    let t = $('<table class="w3-table w3-bordered"></table>')
     Object.keys(limits).forEach(key => {
-        let r = document.createElement('tr');
-
-        let d = document.createElement('td');
-        d.classList.add("w3-right-align");
-        d.innerText = key;
-        r.appendChild(d);
-
-        d = document.createElement('td');
-        d.innerText = limits[key];
-        r.appendChild(d);
-
-        t.appendChild(r);
-    })
+        t.append(
+            $('<tr></tr>').append(
+                $('<td class="w3-right-align"></td>').text(key),
+                $('<td></td>').text(limits[key])
+            )
+        );
+    });
 
     return t;
 }
 
 function registerHover(e, name) {
+    const h = "w3-blue-grey";
+
     let cn = "ph-" + name;
-    e.classList.add(cn);
-    e.onmouseover = () => {
-        let x = document.getElementsByClassName(cn);
-        for (let i = 0; i < x.length; i++) {
-            x[i].classList.add("w3-blue-grey");
-        }
-    }
-    e.onmouseleave = () => {
-        let x = document.getElementsByClassName(cn);
-        for (let i = 0; i < x.length; i++) {
-            x[i].classList.remove("w3-blue-grey");
-        }
-    }
+    let s = '.' + $.escapeSelector(cn)
+    e.addClass(cn).hover(
+        () => { $(s).addClass(h) },
+        () => { $(s).removeClass(h) }
+    );
+
+    return e;
 }
 
 function processList(processes) {
-    let c = document.createElement('div');
+    let c = $('<div></div>')
 
     processes.forEach(proc => {
-        let p = document.createElement('p');
-        p.classList.add("w3-round", "w3-bar-item", "w3-margin", "w3-tag");
-        registerHover(p, proc);
-        p.innerText = proc;
-
-        c.appendChild(p);
-    })
-
-    return c
-}
-
-function genConfigCard(dtl) {
-    let c = document.createElement('div');
-    c.classList.add("w3-card", "w3-margin");
-    c.style.float = "left";
-
-    let e = document.createElement('header');
-    e.classList.add("w3-container", "w3-blue", "w3-bar");
-    e.appendChild(processList(dtl.processes));
-    c.appendChild(e);
-
-    e = document.createElement('div');
-    e.style.float = "left";
-    e.appendChild(genLimits(dtl.limits));
-    c.appendChild(e);
+        c.append(registerHover($('<p class="w3-round w3-bar-item w3-margin w3-tag"></p>').text(proc), proc));
+    });
 
     return c;
 }
 
 function processConfig(data, root) {
     data.forEach(dtl => {
-        root.appendChild(genConfigCard(dtl));
-    })
+        root.append(
+            $('<div class="w3-card w3-margin" style="float:left"></div>').append(
+                $('<header class="w3-container w3-blue w3-bar"></header>').append(processList(dtl.processes)),
+                $('<div style="float:left"></div>').append(genLimits(dtl.limits))
+            )
+        );
+    });
 }
 
 function requestCfg() {
     requestData('/config', 'ph_config', processConfig);
 }
-
-requestCfg()
-setInterval("requestCfg();", refreshPeriod);
 
 function toSeconds(d) {
     // regex for xxHxxMxxS format
@@ -116,11 +77,7 @@ function toSeconds(d) {
 }
 
 function genLimitAndBalance(l, b) {
-    let pb = document.createElement('div');
-    pb.classList.add("w3-dark-grey", "w3-round-xlarge");
 
-    let p = document.createElement('div');
-    p.classList.add("w3-container", "w3-round-xlarge");
     let progress = 100; // in case limit is 0
     let lnmb = toSeconds(l);
     if (lnmb > 0) {
@@ -139,87 +96,59 @@ function genLimitAndBalance(l, b) {
             clr = "w3-yellow";
         }
     }
-    p.classList.add(clr, "w3-center");
-    p.style.width = progress + "%";
-    p.innerText = b + "/" + l;
 
-    pb.appendChild(p);
-
-    return pb;
-}
-
-function genPgbCard(pgb) {
-    let c = document.createElement('div');
-    c.classList.add("w3-card", "w3-margin");
-    c.style.float = "left";
-
-    let e = document.createElement('header');
-    e.classList.add("w3-container", "w3-light-blue", "w3-bar");
-    e.appendChild(processList(pgb.processes));
-    c.appendChild(e);
-
-    e = document.createElement('div');
-    e.classList.add("w3-container", "w3-margin");
-    e.appendChild(genLimitAndBalance(pgb.limit, pgb.balance));
-    c.appendChild(e);
-
-    return c;
+    return $('<div class="w3-dark-grey w3-round-xlarge"></div>').append(
+        $('<div class="w3-container w3-round-xlarge"></div>')
+            .addClass(clr, "w3-center")
+            .width(progress + "%")
+            .text(b + "/" + l)
+    );
 }
 
 function processPGB(data, root) {
     data.forEach(pgb => {
-        root.appendChild(genPgbCard(pgb));
-    })
+        root.append(
+            $('<div class="w3-card w3-margin" style="float:left"></div>').append(
+                $('<header class="w3-container w3-light-blue w3-bar"></header>').append(processList(pgb.processes)),
+                $('<div class="w3-container w3-margin"></div>').append(genLimitAndBalance(pgb.limit, pgb.balance))
+            )
+        );
+    });
 }
 
 function requestProcessGroupBalance() {
     requestData('/groupbalance', 'ph_groupbalance', processPGB);
 }
 
-requestProcessGroupBalance()
-setInterval("requestProcessGroupBalance();", refreshPeriod);
-
 function processProcB(data, root) {
-    let t = document.createElement('table');
-    t.classList.add("w3-card", "w3-margin", "w3-table", "w3-bordered");
-    t.style.float = "left";
+    let t = $('<table class="w3-card w3-margin w3-table w3-bordered" style="float:left"></table>')
 
     Object.keys(data).forEach(key => {
-        let r = document.createElement('tr');
-        let d = document.createElement('td');
-        d.classList.add("w3-right-align", "w3-round", "w3-tag");
-        d.style.float = "right";
-        registerHover(d, key);
-        d.innerText = key;
-        r.appendChild(d);
+        t.append(
+            $('<tr></tr>').append(
+                registerHover($('<td class="w3-right-align w3-round w3-tag" style="float:right"></td>').text(key), key),
+                $('<td></td>').text(data[key])
+            )
+        );
+    });
 
-        d = document.createElement('td');
-        d.innerText = data[key];
-        r.appendChild(d);
-
-        t.appendChild(r);
-    })
-
-    root.appendChild(t);
+    root.append(t);
 }
 
 function requestProcessBalance() {
     requestData('/processbalance', 'ph_processbalance', processProcB);
 }
 
-requestProcessBalance();
-setInterval("requestProcessBalance();", refreshPeriod);
+$(document).ready(
+    () => {
+        $("#ph_version").load("/version");
 
-function requestVersion() {
-    let r = new XMLHttpRequest();
-    r.open('GET', '/version', true);
+        requestCfg();
+        requestProcessGroupBalance();
+        requestProcessBalance();
 
-    r.onload = function () {
-        const root = document.getElementById('ph_version');
-        root.innerHTML = this.response
-    };
-
-    r.send();
-}
-
-requestVersion();
+        setInterval("requestCfg();", refreshPeriod);
+        setInterval("requestProcessGroupBalance();", refreshPeriod);
+        setInterval("requestProcessBalance();", refreshPeriod);
+    }
+);
