@@ -69,7 +69,7 @@ The tool serves a trivial web UI at [localhost:8080](localhost:8080)
 
 On Windows, `ph` is designed to work as Windows service. 
 
-> To install as service, run `make build`, copy the `\bin` folder somewhere and run `phsvc install` and `phsvc start` to install and run the tool as Windows serive. Run `phsvc stop` and `phsvc remove` to stop and uninstall the service. Run `phsvc debug` to run the `ph` as a command line tool (without installing as Windows service)
+To install as service, run `make build`, copy the `\bin` folder somewhere and run `phsvc install` and `phsvc start` to install and run the tool as Windows serive. Run `phsvc stop` and `phsvc remove` to stop and uninstall the service. Run `phsvc debug` to run the `ph` as a command line tool (without installing as Windows service)
 
 ## Work in Progress
 
