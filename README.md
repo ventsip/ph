@@ -67,7 +67,7 @@ The tool serves a trivial web UI at [localhost:8080](localhost:8080)
 
 `ph` is a multi-platform tool that runs on Linux, macOS and Windows.
 
-On Windows, `ph` is designed to work as Windows service. 
+On Windows, `ph` is designed to work as Windows service.
 
 To install as service, run `make build`, copy the `\bin` folder somewhere and run `phsvc install` and `phsvc start` to install and run the tool as Windows serive. Run `phsvc stop` and `phsvc remove` to stop and uninstall the service. Run `phsvc debug` to run the `ph` as a command line tool (without installing as Windows service)
 
@@ -77,5 +77,5 @@ The tool is usable as it is, but far from perfect. The author intends to develop
 
 Top priority items are:
 
-- reorganize the project ot use go modules
-- improve web UI
++ the project ot use go modules
++ improve web UI
