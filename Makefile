@@ -30,6 +30,8 @@ ifeq ($(OS), Windows_NT)
 	$(COPY_WEB_FOLDER_WIN)
 else
 	cd cmd/cli; $(GOBUILD) -v -o ../../bin/$(BINARY) -ldflags="-X main.version=$(VERSION)"
+	cd cmd/winsvc; env GOOS=windows GOARCH=amd64 $(GOBUILD) -v -o ../../bin/$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
+	
 	cp testdata/$(CFG_FILE) bin
 	$(COPY_WEB_FOLDER_LINUX)
 endif
