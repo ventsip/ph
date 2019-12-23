@@ -77,5 +77,5 @@ The tool is usable as it is, but far from perfect. The author intends to develop
 
 Top priority items are:
 
-+ the project ot use go modules
 + improve web UI
++ add API/UI to add to the daily time limit
