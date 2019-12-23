@@ -1,4 +1,4 @@
-.PHONY: clean build test build_test run
+.PHONY: clean build test cover build_test run
 
 GOCMD=go
 GOBUILD=$(GOCMD) build
@@ -55,12 +55,20 @@ test: clean build_test
 ifeq ($(OS), Windows_NT)
 	copy testdata\$(CFG_FILE) bin
 	$(COPY_WEB_FOLDER_WIN)
-	$(GOTEST) .\... -v
+	$(GOTEST) .\... -v -coverprofile bin\cover.out
 else
 	cp testdata/$(CFG_FILE) bin
 	$(COPY_WEB_FOLDER_LINUX)
-	$(GOTEST) ./... -v
+	$(GOTEST) ./... -v -coverprofile bin/cover.out
 endif
+
+cover: test
+ifeq ($(OS), Windows_NT)
+	$(GOCMD) tool cover -html=bin\cover.out
+else
+	$(GOCMD) tool cover -html=bin/cover.out
+endif
+
 
 run: clean build build_test
 ifeq ($(OS), Windows_NT)
