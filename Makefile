@@ -55,11 +55,11 @@ test: clean build_test
 ifeq ($(OS), Windows_NT)
 	copy testdata\$(CFG_FILE) bin
 	$(COPY_WEB_FOLDER_WIN)
-	cd engine & $(GOTEST) -v
+	$(GOTEST) .\... -v
 else
 	cp testdata/$(CFG_FILE) bin
 	$(COPY_WEB_FOLDER_LINUX)
-	cd engine ; $(GOTEST) -v
+	$(GOTEST) ./... -v
 endif
 
 run: clean build build_test
