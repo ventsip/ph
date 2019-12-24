@@ -1,7 +1,9 @@
 package engine
 
 import (
+	"bytes"
 	"context"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
@@ -317,6 +319,71 @@ func TestReloadConfigIfNeeded(t *testing.T) {
 	}
 	if testConfigLoadedCorrectly(t, ph) != true {
 		t.Error("didn't reload config file correctly")
+	}
+}
+
+func TestSetConfig(t *testing.T) {
+	const cfg = `
+[
+    {
+        "processes": [
+            "p1",
+            "p2"
+        ],
+        "limits": {
+            "mon": "1s"
+        }
+    },
+    {
+        "processes": [
+            "p3"
+        ],
+        "limits": {
+            "*": "1h"
+        }
+    }
+]`
+
+	const tmpcfg = "tmp_cfg.json"
+
+	err := os.Remove(tmpcfg)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			t.Error("cannot remove:", tmpcfg)
+		}
+	}
+
+	ph := NewProcessHunter(time.Second, "", time.Hour, nil, tmpcfg)
+
+	err = ph.SetConfig([]byte(cfg))
+	if err != nil {
+		t.Error("Couldnot set config:", cfg)
+	}
+
+	limits, _ := ph.GetLimits()
+	if len(limits) != 2 ||
+		len(limits[0].PG) != 2 ||
+		limits[0].PG[0] != "p1" ||
+		limits[0].PG[1] != "p2" ||
+		limits[0].DL["mon"] != time.Second ||
+		len(limits[1].PG) != 1 ||
+		limits[1].PG[0] != "p3" ||
+		limits[1].DL["*"] != time.Hour {
+		t.Error("config not set correctly")
+	}
+
+	b, err := ioutil.ReadFile(ph.cfgPath)
+	if err != nil {
+		t.Error("cannot read config file", ph.cfgPath)
+	}
+
+	if !bytes.Equal(b, []byte(cfg)) {
+		t.Error("config file", ph.cfgPath, "was not saved correctly")
+	}
+
+	err = os.Remove(tmpcfg)
+	if err != nil {
+		t.Error("cannot remove:", tmpcfg)
 	}
 }
 

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io/ioutil"
+	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -46,6 +48,7 @@ func (tb *TimeBalance) UnmarshalJSON(data []byte) error {
 		}
 		(*tb)[k] = l
 	}
+
 	return err
 }
 
@@ -79,6 +82,7 @@ func (dtl *DailyLimits) UnmarshalJSON(data []byte) error {
 		}
 		(*dtl)[strings.ToLower(k)] = l // converts to lower caps
 	}
+
 	return err
 }
 
@@ -121,31 +125,36 @@ func isValidDailyLimitsFormat(l DailyLimits) bool {
 	return true
 }
 
-// LoadConfig loads ProcessHunder configuration from path
-func (ph *ProcessHunter) LoadConfig() error {
-	// try to load into this temporary variable first
+// parseConfig parses configuration from b, represented as JSON
+func parseConfig(b []byte) ([]ProcessGroupDailyLimit, error) {
 	var limits []ProcessGroupDailyLimit
 
-	b, err := ioutil.ReadFile(ph.cfgPath)
+	err := json.Unmarshal(b, &limits)
 	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(b, &limits)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, l := range limits {
 		if !isValidDailyLimitsFormat(l.DL) {
-			return errors.New(fmt.Sprintln("bad days of the week format:", l.DL))
+			return nil, errors.New(fmt.Sprintln("bad date or days of the week format:", l.DL))
 		}
 	}
 
-	ph.limitsRWM.Lock()
+	return limits, nil
+}
+
+// crc64Table is used in crc64.Checksum
+var crc32Table = crc32.MakeTable(crc32.Koopman)
+
+// setLimits sets ph.limits, ph.cfgTime and ph.limitsHash
+func (ph *ProcessHunter) setLimits(limits []ProcessGroupDailyLimit) error {
 	ph.limits = limits
-	ph.hashLimits()
-	ph.limitsRWM.Unlock()
+
+	b, err := json.Marshal(ph.limits)
+	if err != nil {
+		log.Panicln("cannot marshal limits to json")
+	}
+	ph.limitsHash = crc32.Checksum(b, crc32Table)
 
 	file, err := os.Stat(ph.cfgPath)
 	if err != nil {
@@ -153,16 +162,54 @@ func (ph *ProcessHunter) LoadConfig() error {
 	}
 
 	ph.cfgTime = file.ModTime()
-
 	return nil
+}
+
+// SetConfig sets configuration b (represented as json) and saves it to the ph.cfgPath.
+// if ph.cfgPath cannot be written, the call fails and new config is not set
+func (ph *ProcessHunter) SetConfig(b []byte) error {
+	limits, err := parseConfig(b)
+	if err != nil {
+		return err
+	}
+
+	ph.limitsRWM.Lock()
+	defer ph.limitsRWM.Unlock()
+
+	err = ioutil.WriteFile(ph.cfgPath, b, 0644)
+	if err != nil {
+		return err
+	}
+
+	return ph.setLimits(limits)
+}
+
+// LoadConfig loads ProcessHunder configuration from path
+func (ph *ProcessHunter) LoadConfig() error {
+	b, err := ioutil.ReadFile(ph.cfgPath)
+	if err != nil {
+		return err
+	}
+
+	limits, err := parseConfig(b)
+	if err != nil {
+		return err
+	}
+
+	ph.limitsRWM.Lock()
+	defer ph.limitsRWM.Unlock()
+
+	return ph.setLimits(limits)
 }
 
 // LoadBalance loads the balance from provided path
 func (ph *ProcessHunter) LoadBalance() error {
+	ph.balanceRWM.Lock()
+	defer ph.balanceRWM.Unlock()
+
 	ph.balance = make(dailyTimeBalance)
 
 	b, err := ioutil.ReadFile(ph.balancePath)
-
 	if err != nil {
 		return err
 	}
@@ -170,7 +217,7 @@ func (ph *ProcessHunter) LoadBalance() error {
 	return json.Unmarshal(b, &ph.balance)
 }
 
-// saveBalance saves balance to provided path
+// saveBalance saves balance to ph.balancePath
 func (ph *ProcessHunter) saveBalance() error {
 	d, err := json.MarshalIndent(ph.balance, "", "\t")
 
@@ -181,7 +228,7 @@ func (ph *ProcessHunter) saveBalance() error {
 	return ioutil.WriteFile(ph.balancePath, d, 0644)
 }
 
-// SaveBalance saves balance to provided path
+// SaveBalance saves balance in a thread-safe way
 func (ph *ProcessHunter) SaveBalance() error {
 	ph.balanceRWM.RLock()
 	defer ph.balanceRWM.RUnlock()

@@ -2,8 +2,6 @@ package engine
 
 import (
 	"context"
-	"encoding/json"
-	"hash/crc32"
 	"log"
 	"os"
 	"strings"
@@ -84,18 +82,6 @@ func NewProcessHunter(
 		killer:      killer,
 		cfgPath:     cfgPath,
 	}
-}
-
-// crc64Table is used in crc64.Checksum
-var crc32Table = crc32.MakeTable(crc32.Koopman)
-
-// hashLimits hashes
-func (ph *ProcessHunter) hashLimits() {
-	b, err := json.Marshal(ph.limits)
-	if err != nil {
-		log.Panicln("cannot marshal limits to json")
-	}
-	ph.limitsHash = crc32.Checksum(b, crc32Table)
 }
 
 // GetLimits returns current daily limits (which are normally loaded from a config file) and its hash
