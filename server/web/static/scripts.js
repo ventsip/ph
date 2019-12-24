@@ -121,7 +121,7 @@ function requestProcessGroupBalance() {
 }
 
 function processProcB(data, root) {
-    let t = $('<table class="w3-card w3-margin w3-table w3-bordered" style="float:left"></table>')
+    let t = $('<table class="w3-table w3-bordered"></table>')
 
     Object.keys(data).forEach(key => {
         t.append(
@@ -132,7 +132,7 @@ function processProcB(data, root) {
         );
     });
 
-    root.append(t);
+    root.append($('<div class="w3-card w3-margin" style="float:left"></div>').append(t));
 }
 
 function requestProcessBalance() {
