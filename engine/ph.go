@@ -323,7 +323,12 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, wo
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			work(ctx, time.Now().Sub(t))
+			dt := time.Now().Sub(t)
+			if dt > period*2 && period >= time.Minute {
+				log.Println("Unusually long duration", dt, "between two process checks (for period", period, "). Have computer woke up from sleep?")
+				dt = 0
+			}
+			work(ctx, dt)
 			t = time.Now()
 		}
 	}
