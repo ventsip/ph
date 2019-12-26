@@ -22,6 +22,22 @@ const (
 	testProcess2 = "../bin/test_process2"
 )
 
+func BenchmarkCheckProcesses(b *testing.B) {
+
+	ph := NewProcessHunter(time.Hour, balancePath, time.Hour, nil, configPath)
+
+	err := ph.LoadConfig()
+
+	if err != nil {
+		b.Error("Error loading config file", configPath, err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ph.checkProcesses(context.Background(), time.Second)
+	}
+}
+
 func startTestProcesses(t *testing.T, names ...string) (cmds [](*exec.Cmd), err error) {
 	for _, n := range names {
 		cmd := exec.Command(n)
