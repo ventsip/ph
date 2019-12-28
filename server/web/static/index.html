@@ -24,6 +24,25 @@
     </nav>
     <section style="display:table" id="config">
         <h2>Configuration</h2>
+        <button class="w3-button" onclick="editConfig()">Edit...</button>
+
+        <div id="phid_edit_config" class="w3-modal">
+            <div class="w3-modal-content w3-card-4">
+                <header class="w3-container w3-blue">
+                    <span onclick="$('#phid_edit_config').css({ display: 'none' })"
+                        class="w3-button w3-display-topright">&times;</span>
+                    <h2>Edit configuration</h2>
+                </header>
+                <div class="w3-container">
+                    <textarea placeholder="configuration JSON" class="w3-code notranslate"
+                        style="width: 100%;max-width: 100%;" rows=20></textarea>
+                </div>
+                <footer class="w3-bar w3-blue">
+                    <button class="w3-button w3-right" onclick=saveConfig()>save</button>
+                </footer>
+            </div>
+        </div>
+
         <div id="phid_config"></div>
     </section>
     <section style="display:table" id="groupbalance">

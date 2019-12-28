@@ -1,7 +1,15 @@
 "use strict";
 const refreshPeriod = 60000;
 
-var dataConfig = {} // loaded data
+var dataConfig = {}; // loaded data
+
+function editConfig() {
+    $('#phid_edit_config').css({ display: 'block' }).find('textarea').text(JSON.stringify(dataConfig, null, 4))
+}
+
+function saveConfig() {
+    $('#phid_edit_config').css({ display: 'none' })
+}
 
 function requestData(ep, rootID, processData) {
     $.getJSON(ep, (d, s) => {
@@ -69,11 +77,11 @@ function requestCfg() {
 
 function toSeconds(d) {
     // regex for xxHxxMxxS format
-    const regex = /^(\d{1,2}h)?(\d{1,2}m)?(\d{1,2}(\.\d*)?s)?$/i;
+    const regex = /^(\d+h)?(\d+m)?(\d+(\.\d*)?s)?$/i;
     if (regex.test(d)) {
-        return parseInt(d.match(/\d{1,2}h/i) || '0') * 60 * 60 +
-            parseInt(d.match(/\d{1,2}m/i) || '0') * 60 +
-            parseFloat(d.match(/\d{1,2}(\.\d*)?s/i) || '0');
+        return parseInt(d.match(/\d+h/i) || '0') * 60 * 60 +
+            parseInt(d.match(/\d+m/i) || '0') * 60 +
+            parseFloat(d.match(/\d+(\.\d*)?s/i) || '0');
     } else {
         return 0;
     }
@@ -88,16 +96,13 @@ function genLimitAndBalance(l, b) {
     }
 
     let clr = "w3-light-green";
-    if (progress > 50) {
-        if (progress > 75) {
-            if (progress > 90) {
-                clr = "w3-red";
-            } else {
-                clr = "w3-orange";
-            }
-        } else {
-            clr = "w3-yellow";
-        }
+
+    if (progress > 90) {
+        clr = "w3-red";
+    } else if (progress > 75) {
+        clr = "w3-orange";
+    } else if (progress > 50) {
+        clr = "w3-yellow";
     }
 
     return $('<div class="w3-dark-grey w3-round-xlarge"></div>').append(
