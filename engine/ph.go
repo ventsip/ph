@@ -11,7 +11,7 @@ import (
 	"github.com/mitchellh/go-ps"
 )
 
-const noLimit = time.Hour * 25
+const noLimit = time.Hour * 10000
 
 // DailyLimits maps days of the week to time limit
 // The key can be "*" (meaing 'any day of the week') or space separated string of

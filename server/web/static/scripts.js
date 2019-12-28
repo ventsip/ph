@@ -1,6 +1,8 @@
 "use strict";
 const refreshPeriod = 60000;
 
+var dataConfig = {} // loaded data
+
 function requestData(ep, rootID, processData) {
     $.getJSON(ep, (d, s) => {
         if (s == "success") {
@@ -50,18 +52,19 @@ function processList(processes) {
 }
 
 function processConfig(data, root) {
+    dataConfig = data;
     data.forEach(dtl => {
         root.append(
             $('<div class="w3-card w3-margin" style="float:left"></div>').append(
                 $('<header class="w3-container w3-blue w3-bar"></header>').append(processList(dtl.processes)),
-                $('<div style="float:left"></div>').append(genLimits(dtl.limits))
+                $('<div class="w3-margin" style="float:left"></div>').append(genLimits(dtl.limits))
             )
         );
     });
 }
 
 function requestCfg() {
-    requestData('/config', 'ph_config', processConfig);
+    requestData('/config', 'phid_config', processConfig);
 }
 
 function toSeconds(d) {
@@ -117,7 +120,7 @@ function processPGB(data, root) {
 }
 
 function requestProcessGroupBalance() {
-    requestData('/groupbalance', 'ph_groupbalance', processPGB);
+    requestData('/groupbalance', 'phid_groupbalance', processPGB);
 }
 
 function processProcB(data, root) {
@@ -132,16 +135,20 @@ function processProcB(data, root) {
         );
     });
 
-    root.append($('<div class="w3-card w3-margin" style="float:left"></div>').append(t));
+    root.append(
+        $('<div class="w3-card w3-margin" style="float:left"></div>').append(
+            $('<div class="w3-margin"></div>').append(t)
+        )
+    );
 }
 
 function requestProcessBalance() {
-    requestData('/processbalance', 'ph_processbalance', processProcB);
+    requestData('/processbalance', 'phid_processbalance', processProcB);
 }
 
 $(document).ready(
     () => {
-        $("#ph_version").load("/version");
+        $("#phid_version").load("/version");
 
         requestCfg();
         requestProcessGroupBalance();
