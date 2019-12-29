@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"sync"
@@ -16,10 +17,27 @@ const port = ":8080"
 
 func config(ph *engine.ProcessHunter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		l, _ := ph.GetLimits()
-		b, _ := json.MarshalIndent(l, "", "    ")
-		fmt.Fprintf(w, "%s", b)
+		switch r.Method {
+		case http.MethodGet:
+			w.Header().Set("Content-Type", "application/json")
+			l, _ := ph.GetLimits()
+			b, _ := json.MarshalIndent(l, "", "    ")
+			fmt.Fprintf(w, "%s", b)
+		case http.MethodPut:
+			b, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, err.Error(), 400)
+				break
+			}
+			err = ph.SetConfig(b)
+			if err != nil {
+				http.Error(w, err.Error(), 400)
+				break
+			}
+			http.Error(w, "Configuration saved", 201)
+		default:
+			http.Error(w, "Not Implemented", 501)
+		}
 	}
 }
 

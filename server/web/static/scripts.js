@@ -4,10 +4,21 @@ const refreshPeriod = 60000;
 var dataConfig = {}; // loaded data
 
 function editConfig() {
-    $('#phid_edit_config').css({ display: 'block' }).find('textarea').text(JSON.stringify(dataConfig, null, 4))
+    $('#phid_edit_config').css({ display: 'block' }).find('textarea').val(JSON.stringify(dataConfig, null, 4))
 }
 
 function saveConfig() {
+
+    let d = $('#phid_edit_config').css({ display: 'block' }).find('textarea').val()
+
+    $.ajax({
+        url: '/config',
+        type: 'PUT',
+        contentType: 'application/json',
+        data: d,
+        success: (r, s) => { requestCfg() },
+        error: (x, s, r) => { alert(r + ":\n" + x.responseText) }
+    })
     $('#phid_edit_config').css({ display: 'none' })
 }
 
