@@ -78,12 +78,12 @@ func (dtl *DailyLimits) UnmarshalJSON(data []byte) error {
 	for k, v := range aux {
 		l, err := time.ParseDuration(v)
 		if err != nil {
-			break
+			return err
 		}
 		(*dtl)[strings.ToLower(k)] = l // converts to lower caps
 	}
 
-	return err
+	return nil
 }
 
 // isValidDailyLimitsFormat checks whether string with daily limits is correct
@@ -135,8 +135,14 @@ func parseConfig(b []byte) ([]ProcessGroupDailyLimit, error) {
 	}
 
 	for _, l := range limits {
+		if len(l.PG) == 0 {
+			return nil, errors.New(fmt.Sprintln("Process list required"))
+		}
+		if len(l.DL) == 0 {
+			return nil, errors.New(fmt.Sprintln("Daily limits required"))
+		}
 		if !isValidDailyLimitsFormat(l.DL) {
-			return nil, errors.New(fmt.Sprintln("bad date or days of the week format:", l.DL))
+			return nil, errors.New(fmt.Sprintln("Bad date or days of the week format:", l.DL))
 		}
 	}
 

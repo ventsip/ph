@@ -8,18 +8,19 @@ function editConfig() {
 }
 
 function saveConfig() {
-
-    let d = $('#phid_edit_config').css({ display: 'block' }).find('textarea').val()
-
     $.ajax({
         url: '/config',
         type: 'PUT',
         contentType: 'application/json',
-        data: d,
-        success: (r, s) => { requestCfg() },
-        error: (x, s, r) => { alert(r + ":\n" + x.responseText) }
+        data: $('#phid_edit_config').css({ display: 'block' }).find('textarea').val(),
+        success: (r, s) => {
+            $('#phid_edit_config').css({ display: 'none' });
+            requestCfg()
+        },
+        error: (x, s, r) => {
+            alert(r + ":\n" + x.responseText)
+        }
     })
-    $('#phid_edit_config').css({ display: 'none' })
 }
 
 function requestData(ep, rootID, processData) {
