@@ -72,7 +72,7 @@ func version(ver string) http.Handler {
 func authPut(protected http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPut {
-			w.Header().Set("WWW-Authenticate", `Basic realm="Configuraton"`)
+			w.Header().Set("WWW-Authenticate", `Basic realm="Configuration"`)
 			u, p, ok := r.BasicAuth()
 			if ok == false {
 				http.Error(w, "username and password required", http.StatusUnauthorized)
