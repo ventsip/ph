@@ -15,8 +15,9 @@ import (
 
 const port = ":8080"
 
-func config(ph *engine.ProcessHunter) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+// config serves configuraiton as JSON (GTE) and applies new configuraiton (PUT).
+func config(ph *engine.ProcessHunter) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			w.Header().Set("Content-Type", "application/json")
@@ -26,41 +27,64 @@ func config(ph *engine.ProcessHunter) http.HandlerFunc {
 		case http.MethodPut:
 			b, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				http.Error(w, err.Error(), 400)
+				http.Error(w, err.Error(), http.StatusBadRequest)
 				break
 			}
 			err = ph.SetConfig(b)
 			if err != nil {
-				http.Error(w, err.Error(), 400)
+				http.Error(w, err.Error(), http.StatusBadRequest)
 				break
 			}
-			http.Error(w, "Configuration saved", 201)
+			http.Error(w, "Configuration saved", http.StatusCreated)
 		default:
-			http.Error(w, "Not Implemented", 501)
+			http.Error(w, "Not Implemented", http.StatusNotImplemented)
 		}
-	}
+	})
 }
 
-func groupbalance(ph *engine.ProcessHunter) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+// groupBalance serves ph.GetLatestPGroupsBalance() as JSON (GET)
+func groupBalance(ph *engine.ProcessHunter) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		b, _ := json.MarshalIndent(ph.GetLatestPGroupsBalance(), "", "    ")
 		fmt.Fprintf(w, "%s", b)
-	}
+	})
 }
 
-func processbalance(ph *engine.ProcessHunter) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+// processBalance serves ph.GetLatestProcessesBalance() as JSON (GET)
+func processBalance(ph *engine.ProcessHunter) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		b, _ := json.MarshalIndent(ph.GetLatestProcessesBalance(), "", "    ")
 		fmt.Fprintf(w, "%s", b)
-	}
+	})
 }
 
-func version(ver string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+// version serves version
+func version(ver string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, ver)
-	}
+	})
+}
+
+// authPut is a middleware that protects protected handler with basic authentication
+// expcted username and password are hardcoded
+func authPut(protected http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Configuraton"`)
+			u, p, ok := r.BasicAuth()
+			if ok == false {
+				http.Error(w, "username and password required", http.StatusUnauthorized)
+				return
+			}
+			if !(u == "time" && p == "keeper") {
+				http.Error(w, "incorrent username or password", http.StatusUnauthorized)
+				return
+			}
+		}
+		protected.ServeHTTP(w, r)
+	})
 }
 
 // Serve serves web interface for ph
@@ -75,10 +99,10 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ve
 
 	fs := http.FileServer(http.Dir("web/static"))
 	mux.Handle("/", fs)
-	mux.HandleFunc("/version", version(ver))
-	mux.HandleFunc("/config", config(ph))
-	mux.HandleFunc("/groupbalance", groupbalance(ph))
-	mux.HandleFunc("/processbalance", processbalance(ph))
+	mux.Handle("/version", version(ver))
+	mux.Handle("/config", authPut(config(ph)))
+	mux.Handle("/groupbalance", groupBalance(ph))
+	mux.Handle("/processbalance", processBalance(ph))
 
 	s := http.Server{Addr: port, Handler: mux}
 
