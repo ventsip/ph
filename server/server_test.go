@@ -127,8 +127,7 @@ func TestAuthPutBadCredentials(t *testing.T) {
 	}
 
 	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rec.Code, http.StatusUnauthorized)
+		t.Errorf("handler returned wrong status code: got %v want %v", rec.Code, http.StatusUnauthorized)
 	}
 
 	if rec.Header().Get("WWW-Authenticate") != `Basic realm="Configuration"` {
@@ -151,8 +150,7 @@ func TestAuthPutGoodCredentials(t *testing.T) {
 	h.ServeHTTP(rec, r)
 
 	if rec.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rec.Code, http.StatusOK)
+		t.Errorf("handler returned wrong status code: got %v want %v", rec.Code, http.StatusOK)
 	}
 
 	if !called {
@@ -181,8 +179,7 @@ func TestGetConfig(t *testing.T) {
 	}
 
 	if r.StatusCode != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			r.StatusCode, http.StatusOK)
+		t.Errorf("handler returned wrong status code: got %v want %v", r.StatusCode, http.StatusOK)
 	}
 
 	b, err := ioutil.ReadAll(r.Body)
@@ -195,8 +192,7 @@ func TestGetConfig(t *testing.T) {
 	}
 
 	if ctype := r.Header.Get("Content-Type"); ctype != "application/json; charset=utf-8" {
-		t.Errorf("content type header does not match: got %v want %v",
-			ctype, "application/json; charset=utf-8")
+		t.Errorf("content type header does not match: got %v want %v", ctype, "application/json; charset=utf-8")
 	}
 
 	cancel()

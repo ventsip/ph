@@ -15,7 +15,7 @@ import (
 
 const port = ":8080"
 
-// config serves configuration as JSON (GTE) and applies new configuration (PUT).
+// config serves configuration as JSON (GET) and applies new configuration (PUT).
 func config(ph *engine.ProcessHunter) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -31,7 +31,7 @@ func config(ph *engine.ProcessHunter) http.Handler {
 		case http.MethodPut:
 			b, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				break
 			}
 			err = ph.SetConfig(b)
