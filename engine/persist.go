@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// MarshalJSON marshals pgdb using 12h35m46s duration format
+// MarshalJSON marshals pd using 12h35m46s duration format
 func (pd prettyDuration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(pd.String())
 }

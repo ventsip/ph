@@ -29,7 +29,7 @@ function requestData(ep, rootID, processData) {
             processData(d, $('#' + $.escapeSelector(rootID)).html(""));
         }
         else {
-            $('#' + $.escapeSelector(rootID)).text("Error retreiving data");
+            $('#' + $.escapeSelector(rootID)).text("Error retrieving data");
         }
     });
 }

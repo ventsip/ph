@@ -191,7 +191,7 @@ func TestKillProcess(t *testing.T) {
 		t.Error("One or more of the target processes was not killed")
 	}
 
-	colateral := false
+	collateral := false
 	for _, k := range killed {
 		target := false
 		for _, cmd := range cmds {
@@ -200,12 +200,12 @@ func TestKillProcess(t *testing.T) {
 			}
 		}
 		if !target {
-			colateral = true
+			collateral = true
 			break
 		}
 	}
 
-	if colateral {
+	if collateral {
 		t.Error("Killed one or more wrong processes")
 	}
 
@@ -425,7 +425,7 @@ func TestLoadConfig(t *testing.T) {
 func TestDateToText(t *testing.T) {
 	dts := toText(time.Date(1972, time.October, 16, 0, 0, 0, 0, time.UTC))
 	if dts != "1972-10-16" {
-		t.Error("date formatted incorectly, expected 1972-10-16, got", dts)
+		t.Error("date formatted incorrectly, expected 1972-10-16, got", dts)
 	}
 }
 

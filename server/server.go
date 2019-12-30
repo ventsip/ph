@@ -15,7 +15,7 @@ import (
 
 const port = ":8080"
 
-// config serves configuraiton as JSON (GTE) and applies new configuraiton (PUT).
+// config serves configuration as JSON (GTE) and applies new configuration (PUT).
 func config(ph *engine.ProcessHunter) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -67,8 +67,8 @@ func version(ver string) http.Handler {
 	})
 }
 
-// authPut is a middleware that protects protected handler with basic authentication
-// expcted username and password are hardcoded
+// authPut is a middleware that protects protected handler with basic authentication.
+// Expected username and password are hardcoded.
 func authPut(protected http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPut {
@@ -79,7 +79,7 @@ func authPut(protected http.Handler) http.Handler {
 				return
 			}
 			if !(u == "time" && p == "keeper") {
-				http.Error(w, "incorrent username or password", http.StatusUnauthorized)
+				http.Error(w, "incorrect username or password", http.StatusUnauthorized)
 				return
 			}
 		}
