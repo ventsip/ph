@@ -51,9 +51,9 @@ func TestGetConfigHandler(t *testing.T) {
 			rec.Body.String(), cfg)
 	}
 
-	if ctype := rec.Header().Get("Content-Type"); ctype != "application/json" {
+	if ctype := rec.Header().Get("Content-Type"); ctype != "application/json; charset=utf-8" {
 		t.Errorf("content type header does not match: got %v want %v",
-			ctype, "application/json")
+			ctype, "application/json; charset=utf-8")
 	}
 }
 
@@ -194,11 +194,54 @@ func TestGetConfig(t *testing.T) {
 			b, cfg)
 	}
 
-	if ctype := r.Header.Get("Content-Type"); ctype != "application/json" {
+	if ctype := r.Header.Get("Content-Type"); ctype != "application/json; charset=utf-8" {
 		t.Errorf("content type header does not match: got %v want %v",
-			ctype, "application/json")
+			ctype, "application/json; charset=utf-8")
 	}
 
 	cancel()
 	wg.Wait()
+}
+
+func quickTestGetJSON(t *testing.T, url string, ctype string) {
+	ph := engine.NewProcessHunter(time.Second, "", time.Hour, nil, "")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go ph.Run(ctx, &wg)
+	wg.Add(1)
+	go Serve(ctx, &wg, ph, "test")
+
+	r, err := http.Get(url)
+	if err != nil {
+		t.Fatal("Error calling", url)
+	}
+
+	if r.StatusCode != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			r.StatusCode, http.StatusOK)
+	}
+
+	if c := r.Header.Get("Content-Type"); c != ctype {
+		t.Errorf("content type header does not match: got %v want %v",
+			c, ctype)
+	}
+
+	cancel()
+	wg.Wait()
+}
+func TestSimpleGetConfig(t *testing.T) {
+	quickTestGetJSON(t, "http://localhost:8080/config", "application/json; charset=utf-8")
+}
+
+func TestSimpleGetGroupBalance(t *testing.T) {
+	quickTestGetJSON(t, "http://localhost:8080/groupbalance", "application/json; charset=utf-8")
+}
+func TestSimpleGetProcessBalance(t *testing.T) {
+	quickTestGetJSON(t, "http://localhost:8080/processbalance", "application/json; charset=utf-8")
+}
+
+func TestSimpleGetVersion(t *testing.T) {
+	quickTestGetJSON(t, "http://localhost:8080/version", "text/plain; charset=utf-8")
 }

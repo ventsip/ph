@@ -20,7 +20,7 @@ func config(ph *engine.ProcessHunter) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			l, _ := ph.GetLimits()
 			b, err := json.MarshalIndent(l, "", "    ")
 			if err != nil {
@@ -49,7 +49,7 @@ func config(ph *engine.ProcessHunter) http.Handler {
 // groupBalance serves ph.GetLatestPGroupsBalance() as JSON (GET)
 func groupBalance(ph *engine.ProcessHunter) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		b, _ := json.MarshalIndent(ph.GetLatestPGroupsBalance(), "", "    ")
 		fmt.Fprintf(w, "%s", b)
 	})
@@ -58,7 +58,7 @@ func groupBalance(ph *engine.ProcessHunter) http.Handler {
 // processBalance serves ph.GetLatestProcessesBalance() as JSON (GET)
 func processBalance(ph *engine.ProcessHunter) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		b, _ := json.MarshalIndent(ph.GetLatestProcessesBalance(), "", "    ")
 		fmt.Fprintf(w, "%s", b)
 	})
@@ -71,7 +71,7 @@ func version(ver string) http.Handler {
 	})
 }
 
-// authPut is a middleware that protects protected handler with basic authentication.
+// authPut is a middleware that protects handler h with basic authentication.
 // Expected username and password are hardcoded.
 func authPut(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
