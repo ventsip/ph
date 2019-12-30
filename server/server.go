@@ -75,11 +75,11 @@ func authPut(protected http.Handler) http.Handler {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Configuration"`)
 			u, p, ok := r.BasicAuth()
 			if ok == false {
-				http.Error(w, "username and password required", http.StatusUnauthorized)
+				http.Error(w, "Username and password required", http.StatusUnauthorized)
 				return
 			}
 			if !(u == "time" && p == "keeper") {
-				http.Error(w, "incorrect username or password", http.StatusUnauthorized)
+				http.Error(w, "Incorrect username or password", http.StatusUnauthorized)
 				return
 			}
 		}
