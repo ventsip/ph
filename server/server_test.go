@@ -17,10 +17,10 @@ import (
 const cfg = `[
     {
         "processes": [
-            "p"
+            "non.existing.process.name.with"
         ],
         "limits": {
-            "mon": "1s"
+            "mon": "168h0m0s"
         }
     }
 ]`
