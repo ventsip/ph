@@ -162,17 +162,21 @@ func (ph *ProcessHunter) setLimits(limits []ProcessGroupDailyLimit) error {
 	}
 	ph.limitsHash = crc32.Checksum(b, crc32Table)
 
-	file, err := os.Stat(ph.cfgPath)
-	if err != nil {
-		return err
+	if ph.cfgPath != "" {
+		file, err := os.Stat(ph.cfgPath)
+		if err != nil {
+			return err
+		}
+		ph.cfgTime = file.ModTime()
+	} else {
+		log.Println("Warning: cfgPath is not set")
 	}
-
-	ph.cfgTime = file.ModTime()
 	return nil
 }
 
-// SetConfig sets configuration b (represented as json) and saves it to the ph.cfgPath.
-// if ph.cfgPath cannot be written, the call fails and new config is not set
+// SetConfig sets configuration b (represented as json) and saves it to the ph.cfgPath
+// if ph.cfgPath is "", then the call succeeds without saving config file
+// if ph.cfgPath cannot be written, the call fails and new config is not set.
 func (ph *ProcessHunter) SetConfig(b []byte) error {
 	limits, err := parseConfig(b)
 	if err != nil {
@@ -182,9 +186,11 @@ func (ph *ProcessHunter) SetConfig(b []byte) error {
 	ph.limitsRWM.Lock()
 	defer ph.limitsRWM.Unlock()
 
-	err = ioutil.WriteFile(ph.cfgPath, b, 0644)
-	if err != nil {
-		return err
+	if ph.cfgPath != "" {
+		err = ioutil.WriteFile(ph.cfgPath, b, 0644)
+		if err != nil {
+			return err
+		}
 	}
 
 	return ph.setLimits(limits)

@@ -22,7 +22,11 @@ func config(ph *engine.ProcessHunter) http.Handler {
 		case http.MethodGet:
 			w.Header().Set("Content-Type", "application/json")
 			l, _ := ph.GetLimits()
-			b, _ := json.MarshalIndent(l, "", "    ")
+			b, err := json.MarshalIndent(l, "", "    ")
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				break
+			}
 			fmt.Fprintf(w, "%s", b)
 		case http.MethodPut:
 			b, err := ioutil.ReadAll(r.Body)
@@ -69,7 +73,7 @@ func version(ver string) http.Handler {
 
 // authPut is a middleware that protects protected handler with basic authentication.
 // Expected username and password are hardcoded.
-func authPut(protected http.Handler) http.Handler {
+func authPut(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPut {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Configuration"`)
@@ -83,7 +87,7 @@ func authPut(protected http.Handler) http.Handler {
 				return
 			}
 		}
-		protected.ServeHTTP(w, r)
+		h.ServeHTTP(w, r)
 	})
 }
 
