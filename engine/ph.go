@@ -263,12 +263,10 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 							case <-ctx.Done():
 								return ctx.Err()
 							default:
-								if ph.killer != nil {
-									log.Println("killing", a.Pid())
-									err := ph.killer(a.Pid())
-									if err != nil {
-										log.Println("error killing", a.Pid(), ":", err.Error())
-									}
+								log.Println("killing", a.Pid())
+								err := ph.killer(a.Pid())
+								if err != nil {
+									log.Println("error killing", a.Pid(), ":", err.Error())
 								}
 							}
 						}
