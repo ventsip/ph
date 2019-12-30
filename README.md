@@ -59,9 +59,19 @@ Week days are in format of three-letter abbreviations of the week days - `mon tu
 Dates are in format `yyyy-mm-dd`.
 When in `list`, week days or dates are separated by spaces.
 
+### Time balance check
+
+`ph` checks running processes once every three minutes (hardcoded).
+
+### Configuration update
+
+`ph` monitors for changes in the configuraiton file (`cfg.json`) and reloads it, if changes are detected. So to change the configuration, just overwrite the configuraiton file.
+
+The configuration can also be changed through the web UI and through the API at the [/config] endpoint.
+
 ## UI
 
-The tool serves a simple web UI at [localhost:8080](localhost:8080).
+The tool serves a simple, yet usable, web UI at [localhost:8080](localhost:8080).
 
 Configuration can be edited through the web UI, but requires authentication with username and password. Credentials are hard-coded in `server\server.go`.
 
@@ -75,10 +85,10 @@ To install as service, run `make build`, copy the `\bin` folder somewhere and ru
 
 ## Work in Progress
 
-The tool is usable as it is, but far from perfect. The author intends to develop it further, mostly by improving the user experience.
+The tool is usable as it is, but can be improved. The author intends to develop it further, time permitting.
 
 Top priority items are:
 
-+ add tests for server endpoints and web UI (JavaScript scripts)
++ add tests for web UI (JavaScript scripts)
 + create installation scripts
 + make server port and credentials configurable
