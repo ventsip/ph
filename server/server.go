@@ -117,6 +117,10 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ve
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	s.Shutdown(ctx)
-	log.Println("web service shut down.")
+	err := s.Shutdown(ctx)
+	if err != nil {
+		log.Println("Web service shut down error:", err)
+	} else {
+		log.Println("Web service gracefully shut down")
+	}
 }
