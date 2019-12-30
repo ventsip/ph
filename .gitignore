@@ -1,2 +1,3 @@
 testdata/balance.json
 bin/
+.vscode/settings.json
