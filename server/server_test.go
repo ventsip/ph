@@ -175,23 +175,17 @@ func TestGetConfig(t *testing.T) {
 	wg.Add(1)
 	go Serve(ctx, &wg, ph, "test")
 
-	c := &http.Client{}
-	req, err := http.NewRequest("GET", "http://localhost:8080/config", nil)
+	r, err := http.Get("http://localhost:8080/config")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("Error calling", "http://localhost:8080/config")
 	}
 
-	resp, err := c.Do(req)
-	if err != nil {
-		t.Fatal("Error calling", req.Method, req.URL)
-	}
-
-	if resp.StatusCode != http.StatusOK {
+	if r.StatusCode != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			resp.StatusCode, http.StatusOK)
+			r.StatusCode, http.StatusOK)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		t.Fatal("Cannot read response body")
 	}
@@ -200,7 +194,7 @@ func TestGetConfig(t *testing.T) {
 			b, cfg)
 	}
 
-	if ctype := resp.Header.Get("Content-Type"); ctype != "application/json" {
+	if ctype := r.Header.Get("Content-Type"); ctype != "application/json" {
 		t.Errorf("content type header does not match: got %v want %v",
 			ctype, "application/json")
 	}
