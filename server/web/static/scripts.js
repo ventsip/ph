@@ -15,10 +15,12 @@ function saveConfig() {
         data: $('#phid_edit_config').css({ display: 'block' }).find('textarea').val(),
         success: (r, s) => {
             $('#phid_edit_config').css({ display: 'none' });
-            requestCfg()
+            requestCfg();
+            requestProcessGroupBalance();
+            requestProcessBalance();
         },
         error: (x, s, r) => {
-            alert(r + ":\n" + x.responseText)
+            alert(r + ":\n" + x.responseText);
         }
     })
 }
@@ -163,8 +165,34 @@ function requestProcessBalance() {
     requestData('/processbalance', 'phid_processbalance', processProcB);
 }
 
+function testNotification() {
+    if (Notification.permission !== 'granted')
+        Notification.requestPermission();
+    else {
+        let notification = new Notification('Notification title', {
+            icon: 'http://localhost:8080/favicon.ico',
+            body: 'Hey there! You\'ve been notified! Go to ph',
+        });
+        notification.onclick = function () {
+            window.open('http://localhost:8080');
+        };
+    }
+}
+
+function requestNotificationPermission() {
+    if (!Notification) {
+        alert('Desktop notifications not available in your browser. Try Chromium.');
+        return;
+    }
+
+    if (Notification.permission !== 'granted')
+        Notification.requestPermission();
+}
+
 $(document).ready(
     () => {
+        requestNotificationPermission();
+
         $("#phid_version").load("/version");
 
         requestCfg();
