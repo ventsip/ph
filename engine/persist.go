@@ -171,6 +171,15 @@ func (ph *ProcessHunter) setLimits(limits []ProcessGroupDailyLimit) error {
 	} else {
 		log.Println("Warning: cfgPath is not set")
 	}
+
+	// trigger process check
+	go func() {
+		select {
+		case ph.forceCheck <- struct{}{}:
+		case <-time.After(100 * time.Millisecond):
+		}
+	}()
+
 	return nil
 }
 

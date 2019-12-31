@@ -53,6 +53,7 @@ type ProcessHunter struct {
 	balanceRWM  sync.RWMutex
 	balance     dailyTimeBalance
 	checkPeriod time.Duration // how often to check processes
+	forceCheck  chan struct{} // channel that forces balance check (outsite of checkPeriod)
 	balancePath string        // where balance is periodically stored
 	savePeriod  time.Duration // how often to save balance to balancePath
 
@@ -76,6 +77,7 @@ func NewProcessHunter(
 	cfgPath string) *ProcessHunter {
 	return &ProcessHunter{
 		checkPeriod: checkPeriod,
+		forceCheck:  make(chan struct{}),
 		balance:     make(dailyTimeBalance),
 		balancePath: balancePath,
 		savePeriod:  savePeriod,
@@ -296,11 +298,13 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 
 // Run is a goroutine that periodically checks running processes
 func (ph *ProcessHunter) Run(ctx context.Context, wg *sync.WaitGroup) {
-	scheduler(ctx, wg, ph.checkPeriod, ph.checkProcesses)
+	scheduler(ctx, wg, ph.checkPeriod, ph.forceCheck, ph.checkProcesses)
 }
 
 // scheduler runs the work function periodically (every period seconds)
-func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, work func(context.Context, time.Duration) error) {
+// ctx is used to exit the function, wg is the wait group that tracks when the function ends
+// force is a channel that forces work to run even before the period expires
+func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, force <-chan struct{}, work func(context.Context, time.Duration) error) {
 	defer func() {
 		if wg != nil {
 			wg.Done()
@@ -311,23 +315,21 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, wo
 	defer ticker.Stop()
 
 	t := time.Now()
-	err := work(ctx, 0) // don't add anything to process balance on the first call
-	if err != nil {
-		return
-	}
 
 	for {
+		dt := time.Now().Sub(t)
+		if dt > period*2 && period >= time.Minute {
+			log.Println("Unusually long duration", dt, "between two process checks (for period", period, "). Have computer woke up from sleep?")
+			dt = 0
+		}
+		work(ctx, dt)
+		t = time.Now()
+
 		select {
 		case <-ctx.Done():
 			return
+		case <-force:
 		case <-ticker.C:
-			dt := time.Now().Sub(t)
-			if dt > period*2 && period >= time.Minute {
-				log.Println("Unusually long duration", dt, "between two process checks (for period", period, "). Have computer woke up from sleep?")
-				dt = 0
-			}
-			work(ctx, dt)
-			t = time.Now()
 		}
 	}
 }

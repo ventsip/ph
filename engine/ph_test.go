@@ -467,7 +467,7 @@ func TestSchedulerContext(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go scheduler(ctx, &wg, time.Second*10, func(context.Context, time.Duration) error { return nil })
+	go scheduler(ctx, &wg, time.Second*10, nil, func(context.Context, time.Duration) error { return nil })
 
 	start := time.Now()
 	cancel()
@@ -475,6 +475,32 @@ func TestSchedulerContext(t *testing.T) {
 
 	if time.Since(start) > time.Second {
 		t.Errorf("scheduler didn't stop when context cancelled")
+	}
+}
+
+func TestSchedulerRunNow(t *testing.T) {
+	force := make(chan struct{})
+	defer close(force)
+
+	ct := int32(0)
+	f := func(context.Context, time.Duration) error {
+		atomic.AddInt32(&ct, 1)
+		return nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go scheduler(ctx, &wg, time.Second*10, force, f)
+	force <- struct{}{}
+	cancel()
+	wg.Wait()
+
+	if ct != 2 {
+		t.Errorf("funtion not run when now is populated")
 	}
 }
 
@@ -494,18 +520,16 @@ func TestSchedulerPeriod(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go scheduler(ctx, &wg, time.Second, f)
+	go scheduler(ctx, &wg, time.Second, nil, f)
 
 	timeout := time.NewTimer(time.Second * 2)
 	defer timeout.Stop()
 
 	select {
 	case <-funcCalled:
-
 	case <-timeout.C:
 		t.Errorf("function not called on time")
 	}
@@ -535,5 +559,4 @@ func TestMarshalDailyLimit(t *testing.T) {
 	if len(d) != 2 || d["second"] != time.Second || d["minute"] != time.Minute {
 		t.Error("unmarshaled DailyLimits is not correct:", d)
 	}
-
 }
