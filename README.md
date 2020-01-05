@@ -65,7 +65,7 @@ When in `list`, week days or dates are separated by spaces.
 
 ### Configuration update
 
-`ph` monitors for changes in the configuraiton file (`cfg.json`) and reloads it, if changes are detected. So to change the configuration, just overwrite the configuraiton file.
+`ph` monitors for changes in the configuration file (`cfg.json`) and reloads it, if changes are detected. So to change the configuration, just overwrite the configuration file.
 
 The configuration can also be changed through the web UI and through the API at the [/config] endpoint.
 
