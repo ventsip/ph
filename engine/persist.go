@@ -173,12 +173,10 @@ func (ph *ProcessHunter) setLimits(limits []ProcessGroupDailyLimit) error {
 	}
 
 	// trigger process check
-	go func() {
-		select {
-		case ph.forceCheck <- struct{}{}:
-		case <-time.After(100 * time.Millisecond):
-		}
-	}()
+	select {
+	case ph.forceCheck <- struct{}{}:
+	default:
+	}
 
 	return nil
 }
