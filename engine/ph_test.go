@@ -500,7 +500,7 @@ func TestSchedulerRunNow(t *testing.T) {
 	wg.Wait()
 
 	if ct != 2 {
-		t.Errorf("funtion not run when now is populated")
+		t.Errorf("function not run when now is populated")
 	}
 }
 
