@@ -71,11 +71,11 @@ func version(ver string) http.Handler {
 	})
 }
 
-// authPut is a middleware that protects handler h with basic authentication.
+// authPut is a middleware that protects PUT method for handler h with basic authentication.
 // Expected username and password are hardcoded.
 func authPut(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPut {
+		if r.Method == http.MethodPut { // only PUT method is protected
 			w.Header().Set("WWW-Authenticate", `Basic realm="Configuration"`)
 			u, p, ok := r.BasicAuth()
 			if ok == false {
