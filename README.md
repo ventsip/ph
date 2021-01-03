@@ -79,9 +79,16 @@ Configuration can be edited through the web UI, but requires authentication with
 
 `ph` is a multi-platform tool that runs on Linux, macOS and Windows.
 
+### Windows
 On Windows, `ph` is designed to work as Windows service.
 
-To install as service, run `make build`, copy the `\bin` folder somewhere and run `phsvc install` and `phsvc start` to install and run the tool as Windows service. Run `phsvc stop` and `phsvc remove` to stop and uninstall the service. Run `phsvc debug` to run the `ph` as a command line tool (without installing as Windows service).
+To build, install and run the tool as Windows service, run `make build`, copy the `\bin` folder somewhere and run `phsvc install` and `phsvc start`.  
+
+To enable the service to start automatically when Windows starts, open the Windows Service Manager, right click on `Process Hunter` service, select `Properties` from the context menu and set `Startup type` to `Automatic`.
+
+Run `phsvc stop` and `phsvc remove` to stop and uninstall the service. 
+
+Run `phsvc debug` to run the `ph` as a command line tool (without installing as Windows service).
 
 ## Work in Progress
 
