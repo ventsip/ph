@@ -144,7 +144,7 @@ func TestAuthPutGoodCredentials(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.SetBasicAuth("time", "keeper")
+	r.SetBasicAuth("time", "k33p3r")
 	rec := httptest.NewRecorder()
 
 	h.ServeHTTP(rec, r)

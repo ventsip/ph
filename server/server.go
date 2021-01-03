@@ -82,7 +82,7 @@ func authPut(h http.Handler) http.Handler {
 				http.Error(w, "Username and password required", http.StatusUnauthorized)
 				return
 			}
-			if !(u == "time" && p == "keeper") {
+			if !(u == "time" && p == "k33p3r") {
 				http.Error(w, "Incorrect username or password", http.StatusUnauthorized)
 				return
 			}
