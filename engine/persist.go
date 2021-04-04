@@ -86,38 +86,65 @@ func (dtl *DailyLimits) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// isValidDailyLimitsFormat checks whether string with daily limits is correct
-func isValidDailyLimitsFormat(l DailyLimits) bool {
-	for k := range l {
-		if k == "*" {
-			continue
-		}
+// isValidDaySpecification checks whether spec is a valid day specification
+func isValidDaySpecification(spec string) bool {
+	if spec == "*" {
+		return true
+	}
 
-		words := strings.Fields(k)
+	words := strings.Fields(spec)
 
-		if len(words) == 0 {
-			return false
-		}
+	if len(words) == 0 {
+		return false
+	}
 
-		for _, w := range words {
-			valid := false
+	for _, w := range words {
+		valid := false
 
-			// week days
-			for _, d := range weekDays {
-				if w == d {
-					valid = true
-					break
-				}
-			}
-
-			// dates
-			match, err := regexp.MatchString(`^\d{1,4}-\d{1,2}-\d{1,2}$`, w)
-			if match && err == nil {
+		// week days
+		for _, d := range weekDays {
+			if w == d {
 				valid = true
 				break
 			}
+		}
 
-			if !valid {
+		// dates
+		matched, err := regexp.MatchString(`^\d{1,4}-\d{1,2}-\d{1,2}$`, w)
+		if matched && err == nil {
+			valid = true
+			break
+		}
+
+		if !valid {
+			return false
+		}
+	}
+	return true
+}
+
+// isValidDailyLimitsFormat checks whether string with daily limits is correct
+func isValidDailyLimitsFormat(l DailyLimits) bool {
+	for k := range l {
+		if !isValidDaySpecification(k) {
+			return false
+		}
+	}
+	return true
+}
+
+// isValidBlackoutFormat checks whether Blackout settings are correctly formatted
+func isValidBlackoutFormat(b BlackOut) bool {
+	for k, v := range b {
+		// check the validity of the day specification
+		if !isValidDaySpecification(k) {
+			return false
+		}
+
+		// check the validity of the blackout period specifications
+		for _, p := range v {
+			matched, err := regexp.MatchString(`^(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?$`, p)
+			if !matched || err != nil {
 				return false
 			}
 		}
@@ -138,11 +165,14 @@ func parseConfig(b []byte) ([]ProcessGroupDailyLimit, error) {
 		if len(l.PG) == 0 {
 			return nil, errors.New(fmt.Sprintln("Process list required"))
 		}
-		if len(l.DL) == 0 {
-			return nil, errors.New(fmt.Sprintln("Daily limits required"))
+		if len(l.DL) == 0 && len(l.BO) == 0 {
+			return nil, errors.New(fmt.Sprintln("Both Daily limits and Blackout configurations are missing. At least one of them should be configured"))
 		}
 		if !isValidDailyLimitsFormat(l.DL) {
-			return nil, errors.New(fmt.Sprintln("Bad date or days of the week format:", l.DL))
+			return nil, errors.New(fmt.Sprintln("Bad date or days of the week format in Daily limits:", l.DL))
+		}
+		if !isValidBlackoutFormat(l.BO) {
+			return nil, errors.New(fmt.Sprintln("Bad fromat of Blackout settings:", l.BO))
 		}
 	}
 
