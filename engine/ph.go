@@ -13,13 +13,16 @@ import (
 
 const noLimit = time.Hour * 10000
 
-// DailyLimits maps days of the week to time limit
-// The key can be "*" (meaing 'any day of the week') or space separated string of
-// three-letter abbreviations of the days of week, i.e.
-// Mon Tue Wed Thu Fri Sat Sun
+// DailyLimits maps days to time limit
+// The key (days) can be
+// - "*" (meaing 'any day of the week')
+// - space separated string of three-letter abbreviations of the days of week, i.e. Mon Tue Wed Thu Fri Sat Sun
+// - a concreate date in the format YYYY-MM-DD
+// - space separated list of dates
+// - a combination of all of the above
 type DailyLimits map[string]time.Duration
 
-// Blackout maps days of the week to a list of blackout periods
+// Blackout maps days to a list of blackout periods
 // See DailyLimits for the meaning of the key of this map
 // The values (blackout periods) are strings like this:
 // "12:00..12:30" - for a 30 minutes blackout
@@ -132,43 +135,123 @@ var weekDays = [...]string{
 	"sat",
 }
 
-// evalDailyLimit returns the daily time limit, parsing dl map
-// prioritizing more concrete, to more generic specifications, in order:
+// getActiveSpec iterates over specs,
+// which is an array of keys that are used in DailyLimits and BlackOut structures.
+// It returns the sp (an element of the specs array) and a boolean if such was found
+// based on the current date and day of week
+// it prioritizes more concrete, to more generic specifications, in order:
 // - specific day, e.g. "wed"
 // - a day from a list: "mon wed fri"
 // - any day "*"
-func evalDailyLimit(dt string, wd string, dl DailyLimits) (l time.Duration) {
-	l = noLimit // effectively - no limit
+func getActiveSpec(dt string, wd string, specs []string) (sp string, found bool) {
+	found = false
+
 	dateInList := false
 	dayInList := false
 	dayMatch := false
-	for k, v := range dl {
+	for _, k := range specs {
 		if k == dt { // date match - end of search
-			l = v
+			sp = k
+			found = true
 			break
 		}
 		if strings.Contains(k, dt) { // date in list
-			l = v
+			sp = k
+			found = true
 			dateInList = true
 		}
 		if !dateInList {
 			if k == wd { // day of week match
-				l = v
+				sp = k
+				found = true
 				dayMatch = true
 			}
 			if !dayMatch {
 				if strings.Contains(k, wd) { // day in list
-					l = v
+					sp = k
+					found = true
 					dayInList = true
 				}
 				if !dayInList {
 					if k == "*" {
-						l = v
+						sp = k
+						found = true
 					}
 				}
 			}
 		}
 	}
+	return
+}
+
+// isBlocked evaluates whether now is within bo period,
+// based on the current date dt and week wd of day, and the provided BlackOut spec bo
+// See getActiveSpec to understand how a particular BlackOut is selected
+func isBlocked(now time.Time, dt string, wd string, bo BlackOut) bool {
+
+	specs := make([]string, len(bo))
+	i := 0
+	for k := range bo {
+		specs[i] = k
+		i++
+	}
+
+	spec, found := getActiveSpec(dt, wd, specs)
+
+	if found {
+		const layout = "15:04"
+		// strip down everything, except HH:00
+		now, _ = time.Parse(layout, now.Format(layout))
+
+		for _, period := range bo[spec] {
+
+			separator := strings.Index(period, "..")
+
+			intersect := true
+
+			if separator > 0 {
+				t, err := time.Parse(layout, period[0:separator])
+				if err == nil {
+					if t.After(now) {
+						intersect = false
+					}
+				}
+			}
+			if len(period) > 2 {
+				t, err := time.Parse(layout, period[separator+2:])
+				if err == nil {
+					if t.Before(now) {
+						intersect = false
+					}
+				}
+			}
+			if intersect {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// evalDailyLimit returns the daily time limit,
+// based on the current date dt and week wd of day, and the provided DailyLimit spec dl
+// See getActiveSpec to understand how a particular DailyLimit is selected
+func evalDailyLimit(dt string, wd string, dl DailyLimits) (l time.Duration) {
+	l = noLimit // effectively - no limit
+
+	specs := make([]string, len(dl))
+	i := 0
+	for k := range dl {
+		specs[i] = k
+		i++
+	}
+
+	spec, found := getActiveSpec(dt, wd, specs)
+
+	if found {
+		l = dl[spec]
+	}
+
 	return
 }
 
@@ -261,8 +344,10 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 			B:  prettyDuration{bg.Round(time.Second)},
 		}
 
-		// if overtime - kill the prcesses
-		if bg > l {
+		isBlocked := isBlocked(time.Now(), date, weekDay, pdl.BO)
+
+		// if overtime or blocked - kill the prcesses
+		if bg > l || isBlocked {
 			log.Println(pdl.PG, ":", bg, "/", l)
 			for _, p := range pdl.PG { // iterate all processes in the process group
 				if d[p] > 0 {

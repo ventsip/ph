@@ -167,6 +167,36 @@ func TestEvalDailyLimit(t *testing.T) {
 	}
 }
 
+func TestIsBlocked(t *testing.T) {
+	now, _ := time.Parse("15:04 2 Jan 2006", "12:00 1 Jan 1900")
+
+	boTrue := []BlackOut{
+		{"*": {"..15:00"}},
+		{"*": {"8:00.."}},
+		{"*": {"2:00..20:00"}},
+		{"*": {".."}},
+	}
+
+	for _, b := range boTrue {
+		if isBlocked(now, "1972-10-16", "mon", b) == false {
+			t.Error("mon should be blocked")
+		}
+	}
+	boFalse := []BlackOut{
+		{"*": {"2:00..3:00"}},
+		{"*": {"15:00..16:00"}},
+		{"*": {"..11:00"}},
+		{"*": {"13:00.."}},
+	}
+
+	for _, b := range boFalse {
+		if isBlocked(now, "1972-10-16", "mon", b) == true {
+			t.Error("mon should NOT be blocked")
+		}
+	}
+
+}
+
 func TestCheckProcessNoConfig(t *testing.T) {
 	ph := NewProcessHunter(time.Second, "", time.Hour, nil, "")
 
@@ -392,7 +422,10 @@ func TestSetConfig(t *testing.T) {
         ],
         "limits": {
             "*": "1h"
-        }
+        },
+		"blackout": {
+			"mon":["12:00..16:00"]
+		}
     }
 ]`
 
@@ -418,9 +451,13 @@ func TestSetConfig(t *testing.T) {
 		limits[0].PG[0] != "p1" ||
 		limits[0].PG[1] != "p2" ||
 		limits[0].DL["mon"] != time.Second ||
+		len(limits[0].BO) != 0 ||
 		len(limits[1].PG) != 1 ||
 		limits[1].PG[0] != "p3" ||
-		limits[1].DL["*"] != time.Hour {
+		limits[1].DL["*"] != time.Hour ||
+		len(limits[1].BO) != 1 ||
+		len(limits[1].BO["mon"]) != 1 ||
+		limits[1].BO["mon"][0] != "12:00..16:00" {
 		t.Error("config not set correctly")
 	}
 
