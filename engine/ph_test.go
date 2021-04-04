@@ -62,8 +62,7 @@ func stopTestProcesses(t *testing.T, cmds [](*exec.Cmd)) (err error) {
 	return
 }
 
-func TestIsValidDailyLimitsFormat(t *testing.T) {
-
+func TestIsValidDaySpecification(t *testing.T) {
 	valid := []string{
 		"*",
 		"mon", "tue", "wed", "thu", "fri", "sat", "sun",
@@ -75,8 +74,8 @@ func TestIsValidDailyLimitsFormat(t *testing.T) {
 		"2019-01-01 mon"}
 
 	for _, v := range valid {
-		if !isValidDailyLimitsFormat(DailyLimits{v: time.Second}) {
-			t.Error("couldn't recognize", v, "as valid week day(s) or date(s) specification")
+		if !isValidDaySpecification(v) {
+			t.Error("couldn't recognize", v, "as a valid week day(s) or date(s) specification")
 		}
 	}
 
@@ -93,8 +92,39 @@ func TestIsValidDailyLimitsFormat(t *testing.T) {
 		"2039-01-301",
 		"20319-01-01"}
 	for _, inv := range invalid {
-		if isValidDailyLimitsFormat(DailyLimits{inv: time.Second}) {
-			t.Error("accepted", inv, "as valid week days string")
+		if isValidDaySpecification(inv) {
+			t.Error("accepted", inv, "as a valid week days string")
+		}
+	}
+
+}
+func TestIsValidDailyLimitsFormat(t *testing.T) {
+	// nothing much to test here - check TestIsValidDaySpecification
+}
+
+func TestIsValidBlackoutFormat(t *testing.T) {
+
+	valid := []string{
+		"..12:00",
+		"00:00..5:30",
+		"0:00..05:03",
+		"12:00..",
+		".."}
+
+	for _, v := range valid {
+		if !isValidBlackoutFormat(BlackOut{"*": []string{v}}) {
+			t.Error("couldn't recognize", v, "as a valid blackout spec")
+		}
+	}
+
+	invalid := []string{
+		"..25:00",
+		"..01:60",
+		"00:00...5:30",
+		"0:00..24:00"}
+	for _, inv := range invalid {
+		if isValidBlackoutFormat(BlackOut{"*": []string{inv}}) {
+			t.Error("accepted", inv, "as a valid blackout spec")
 		}
 	}
 }
