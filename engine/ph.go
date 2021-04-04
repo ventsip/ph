@@ -19,11 +19,20 @@ const noLimit = time.Hour * 10000
 // Mon Tue Wed Thu Fri Sat Sun
 type DailyLimits map[string]time.Duration
 
+// Blackout maps days of the week to a list of blackout periods
+// See DailyLimits for the meaning of the key of this map
+// The values (blackout periods) are strings like this:
+// "12:00..12:30" - for a 30 minutes blackout
+// "..10:00" - blackout up until 10:00 in the morning
+// "18:00.. - blackout after 6:00PM
+type BlackOut map[string][]string
+
 // ProcessGroupDailyLimit specifies daily time limit DL
 // for one or more processes in PG
 type ProcessGroupDailyLimit struct {
 	PG []string    `json:"processes"`
 	DL DailyLimits `json:"limits"`
+	BO BlackOut    `json:"blackout"`
 }
 
 // prettyDuration only purpose is to override MarshalJSON to present time.Duration in more human friendly format
@@ -252,6 +261,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 			B:  prettyDuration{bg.Round(time.Second)},
 		}
 
+		// if overtime - kill the prcesses
 		if bg > l {
 			log.Println(pdl.PG, ":", bg, "/", l)
 			for _, p := range pdl.PG { // iterate all processes in the process group

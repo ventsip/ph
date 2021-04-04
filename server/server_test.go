@@ -14,6 +14,8 @@ import (
 	"bitbucket.org/ventsip/ph/engine"
 )
 
+// some test configuration
+// don't use tabs - only spaces; otherwise the some string comparisons may fail
 const cfg = `[
     {
         "processes": [
@@ -21,7 +23,8 @@ const cfg = `[
         ],
         "limits": {
             "mon": "168h0m0s"
-        }
+        },
+        "blackout": null
     }
 ]`
 

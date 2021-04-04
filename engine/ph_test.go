@@ -298,7 +298,13 @@ func testConfigLoadedCorrectly(t *testing.T, ph *ProcessHunter) bool {
 		len(ph.limits[0].PG) != 2 ||
 		ph.limits[0].PG[0] != "test_process" ||
 		ph.limits[0].PG[1] != "test_process.exe" ||
-		!reflect.DeepEqual(ph.limits[0].DL, DailyLimits{"mon tue wed": time.Second, "1999-12-25": time.Second}) {
+		!reflect.DeepEqual(ph.limits[0].DL, DailyLimits{"mon tue wed": time.Second, "1999-12-25": time.Second}) ||
+		len(ph.limits[0].BO) != 2 ||
+		len(ph.limits[1].BO) != 1 ||
+		len(ph.limits[2].BO) != 0 ||
+		len(ph.limits[0].BO["mon"]) != 1 ||
+		len(ph.limits[1].BO["*"]) != 3 ||
+		ph.limits[1].BO["*"][0] != "..12:00" {
 		t.Error("Config file", configPath, "not read correctly")
 		return false
 	}
@@ -406,10 +412,10 @@ func TestSetConfig(t *testing.T) {
 func TestLoadConfig(t *testing.T) {
 	ph := NewProcessHunter(time.Second, "", time.Hour, nil, configPath)
 	ph.limits = []ProcessGroupDailyLimit{
-		{[]string{"1"}, DailyLimits{"*": time.Minute}},
-		{[]string{"2"}, DailyLimits{"*": time.Minute}},
-		{[]string{"3"}, DailyLimits{"*": time.Minute}},
-		{[]string{"4"}, DailyLimits{"*": time.Minute}},
+		{[]string{"1"}, DailyLimits{"*": time.Minute}, BlackOut{"mon": {"..08:00"}}},
+		{[]string{"2"}, DailyLimits{"*": time.Minute}, BlackOut{"tue wed": {"12:00..14:00"}}},
+		{[]string{"3"}, DailyLimits{"*": time.Minute}, BlackOut{"*": {"22:00..", "..12:00"}, "tue": {"06:00..12:00"}}},
+		{[]string{"4"}, DailyLimits{"*": time.Minute}, BlackOut{}},
 	}
 
 	err := ph.LoadConfig()
