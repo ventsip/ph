@@ -206,7 +206,6 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 
 	// 1. get all processes and update their time balance for the day
 	// ---------------
-
 	pss, err := ps.Processes()
 
 	if err != nil {
@@ -280,6 +279,8 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 		}
 	}
 
+	// 3. Save time balance
+	// ---------------
 	if (lastSaved.Add(ph.savePeriod)).Before(time.Now()) {
 		if ph.balancePath != "" {
 			log.Println("saving balance", ph.balancePath)
