@@ -179,9 +179,10 @@ func TestIsBlocked(t *testing.T) {
 
 	for _, b := range boTrue {
 		if isBlocked(now, "1972-10-16", "mon", b) == false {
-			t.Error("mon should be blocked")
+			t.Error(now, " should be blocked by ", b["*"], "but is not")
 		}
 	}
+
 	boFalse := []BlackOut{
 		{"*": {"2:00..3:00"}},
 		{"*": {"15:00..16:00"}},
@@ -191,10 +192,9 @@ func TestIsBlocked(t *testing.T) {
 
 	for _, b := range boFalse {
 		if isBlocked(now, "1972-10-16", "mon", b) == true {
-			t.Error("mon should NOT be blocked")
+			t.Error(now, " should NOT be blocked by ", b["*"], "but is")
 		}
 	}
-
 }
 
 func TestCheckProcessNoConfig(t *testing.T) {

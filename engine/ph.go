@@ -200,7 +200,7 @@ func isBlocked(now time.Time, dt string, wd string, bo BlackOut) bool {
 
 	if found {
 		const layout = "15:04"
-		// strip down everything, except HH:00
+		// strip down everything, except HH:MM
 		now, _ = time.Parse(layout, now.Format(layout))
 
 		for _, period := range bo[spec] {
