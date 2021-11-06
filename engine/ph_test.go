@@ -292,7 +292,7 @@ func TestPeriodicSaveBalance(t *testing.T) {
 
 	ph := NewProcessHunter(checkPeriod, path, savePeriod, nil, "")
 
-	err := os.Remove(path)
+	os.Remove(path)
 	if fileExists(path) {
 		t.Error("cannot remove file", path)
 	}
@@ -308,7 +308,7 @@ func TestPeriodicSaveBalance(t *testing.T) {
 	if !fileExists(path) {
 		t.Error("balance file", path, "not created on-time")
 	} else {
-		err = os.Remove(path)
+		err := os.Remove(path)
 		if err != nil {
 			t.Error("cannot cleanup file", path, ":", err)
 		}

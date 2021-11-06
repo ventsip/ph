@@ -98,6 +98,7 @@ func isValidDaySpecification(spec string) bool {
 		return false
 	}
 
+	re := regexp.MustCompile(`^\d{1,4}-\d{1,2}-\d{1,2}$`)
 	for _, w := range words {
 		valid := false
 
@@ -110,8 +111,8 @@ func isValidDaySpecification(spec string) bool {
 		}
 
 		// dates
-		matched, err := regexp.MatchString(`^\d{1,4}-\d{1,2}-\d{1,2}$`, w)
-		if matched && err == nil {
+		matched := re.MatchString(w)
+		if matched {
 			valid = true
 			break
 		}
@@ -142,9 +143,10 @@ func isValidBlackoutFormat(b BlackOut) bool {
 		}
 
 		// check the validity of the blackout period specifications
+		re := regexp.MustCompile(`^(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?$`)
 		for _, p := range v {
-			matched, err := regexp.MatchString(`^(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?$`, p)
-			if !matched || err != nil {
+			matched := re.MatchString(p)
+			if !matched {
 				return false
 			}
 		}
