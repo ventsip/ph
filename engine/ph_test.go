@@ -585,7 +585,7 @@ func TestSchedulerPeriod(t *testing.T) {
 
 	f := func(context.Context, time.Duration) error {
 		atomic.AddInt32(&ct, -1)
-		if 0 == ct {
+		if ct == 0 {
 			funcCalled <- struct{}{}
 		}
 

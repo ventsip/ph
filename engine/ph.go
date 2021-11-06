@@ -329,27 +329,27 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 	ph.processes = make(TimeBalance)
 
 	d := ph.balance[date]
-	for il, pdl := range ph.limits { // iterate all processes daily limits
+	for il, pgdl := range ph.limits { // iterate all processes daily limits
 		bg := time.Duration(0)
-		for _, p := range pdl.PG { // iterate all processes in the process group
+		for _, p := range pgdl.PG { // iterate all processes in the process group
 			bg = bg + d[p]
 			ph.processes[p] = d[p].Round(time.Second)
 		}
 
-		l := evalDailyLimit(date, weekDay, pdl.DL)
+		l := evalDailyLimit(date, weekDay, pgdl.DL)
 
 		ph.pgroups[il] = ProcessGroupDailyBalance{
-			PG: pdl.PG,
+			PG: pgdl.PG,
 			L:  prettyDuration{l},
 			B:  prettyDuration{bg.Round(time.Second)},
 		}
 
-		isBlocked := isBlocked(time.Now(), date, weekDay, pdl.BO)
+		isBlocked := isBlocked(time.Now(), date, weekDay, pgdl.BO)
 
 		// if overtime or blocked - kill the prcesses
 		if bg > l || isBlocked {
-			log.Println(pdl.PG, ":", bg, "/", l)
-			for _, p := range pdl.PG { // iterate all processes in the process group
+			log.Println(pgdl.PG, ":", bg, "/", l)
+			for _, p := range pgdl.PG { // iterate all processes in the process group
 				if d[p] > 0 {
 					log.Println(p, ":", d[p])
 					for _, a := range pss { // iterate all running processes
@@ -370,7 +370,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 				}
 			}
 		} else {
-			log.Println(pdl.PG, "remaining:", l-bg)
+			log.Println(pgdl.PG, "remaining:", l-bg)
 		}
 	}
 
@@ -413,7 +413,7 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, fo
 	t := time.Now()
 
 	for {
-		dt := time.Now().Sub(t)
+		dt := time.Since(t)
 		if dt > period*2 && period >= time.Minute {
 			log.Println("Unusually long duration", dt, "between two process checks (for period", period, "). Have computer woke up from sleep?")
 			dt = 0

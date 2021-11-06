@@ -50,6 +50,23 @@ function genLimits(limits) {
     return t;
 }
 
+function genBlackout(blackout) {
+    let t = $('<table class="w3-table w3-bordered"></table>')
+
+    if (blackout) {
+        Object.keys(blackout).forEach(key => {
+            t.append(
+                $('<tr></tr>').append(
+                    $('<td class="w3-right-align"></td>').text(key),
+                    $('<td></td>').text(blackout[key])
+                )
+            );
+        });
+    }
+
+    return t;
+}
+
 function registerHover(e, name) {
     const h = "w3-blue-grey";
 
@@ -79,7 +96,8 @@ function processConfig(data, root) {
         root.append(
             $('<div class="w3-card w3-margin" style="float:left"></div>').append(
                 $('<header class="w3-container w3-blue w3-bar"></header>').append(processList(dtl.processes)),
-                $('<div class="w3-margin" style="float:left"></div>').append(genLimits(dtl.limits))
+                $('<div class="w3-margin" style="float:left"></div>').append(genLimits(dtl.limits)),
+                $('<div class="w3-margin" style="float:left"></div>').append(genBlackout(dtl.blackout))
             )
         );
     });
