@@ -53,7 +53,7 @@ func (tb *TimeBalance) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalJSON marshals dtl using 12h35m46s duration format
-func (dtl DailyLimits) MarshalJSON() ([]byte, error) {
+func (dtl DayLimits) MarshalJSON() ([]byte, error) {
 	aux := make(map[string]string)
 
 	for k, v := range dtl {
@@ -64,7 +64,7 @@ func (dtl DailyLimits) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON unmarshals dtl, lowercasing the key and using 12h35m46s duration format
-func (dtl *DailyLimits) UnmarshalJSON(data []byte) error {
+func (dtl *DayLimits) UnmarshalJSON(data []byte) error {
 	aux := make(map[string]string)
 
 	err := json.Unmarshal(data, &aux)
@@ -73,7 +73,7 @@ func (dtl *DailyLimits) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	(*dtl) = make(DailyLimits)
+	(*dtl) = make(DayLimits)
 
 	for k, v := range aux {
 		l, err := time.ParseDuration(v)
@@ -124,8 +124,8 @@ func isValidDaySpecification(spec string) bool {
 	return true
 }
 
-// isValidDailyLimitsFormat checks whether string with daily limits is correct
-func isValidDailyLimitsFormat(l DailyLimits) bool {
+// isValidDayLimitsFormat checks whether string with day limits is correct
+func isValidDayLimitsFormat(l DayLimits) bool {
 	for k := range l {
 		if !isValidDaySpecification(k) {
 			return false
@@ -155,8 +155,8 @@ func isValidBlackoutFormat(b BlackOut) bool {
 }
 
 // parseConfig parses configuration from b, represented as JSON
-func parseConfig(b []byte) ([]ProcessGroupDailyLimit, error) {
-	var limits []ProcessGroupDailyLimit
+func parseConfig(b []byte) ([]ProcessGroupDayLimit, error) {
+	var limits []ProcessGroupDayLimit
 
 	err := json.Unmarshal(b, &limits)
 	if err != nil {
@@ -168,10 +168,10 @@ func parseConfig(b []byte) ([]ProcessGroupDailyLimit, error) {
 			return nil, errors.New(fmt.Sprintln("Process list required"))
 		}
 		if len(l.DL) == 0 && len(l.BO) == 0 {
-			return nil, errors.New(fmt.Sprintln("Both Daily limits and Blackout configurations are missing. At least one of them should be configured"))
+			return nil, errors.New(fmt.Sprintln("Both Day limits and Blackout configurations are missing. At least one of them should be configured"))
 		}
-		if !isValidDailyLimitsFormat(l.DL) {
-			return nil, errors.New(fmt.Sprintln("Bad date or days of the week format in Daily limits:", l.DL))
+		if !isValidDayLimitsFormat(l.DL) {
+			return nil, errors.New(fmt.Sprintln("Bad date or days of the week format in Day limits:", l.DL))
 		}
 		if !isValidBlackoutFormat(l.BO) {
 			return nil, errors.New(fmt.Sprintln("Bad fromat of Blackout settings:", l.BO))
@@ -185,7 +185,7 @@ func parseConfig(b []byte) ([]ProcessGroupDailyLimit, error) {
 var crc32Table = crc32.MakeTable(crc32.Koopman)
 
 // setLimits sets ph.limits, ph.cfgTime and ph.limitsHash
-func (ph *ProcessHunter) setLimits(limits []ProcessGroupDailyLimit) error {
+func (ph *ProcessHunter) setLimits(limits []ProcessGroupDayLimit) error {
 	ph.limits = limits
 
 	b, err := json.Marshal(ph.limits)
@@ -258,7 +258,7 @@ func (ph *ProcessHunter) LoadBalance() error {
 	ph.balanceRWM.Lock()
 	defer ph.balanceRWM.Unlock()
 
-	ph.balance = make(dailyTimeBalance)
+	ph.balance = make(dayTimeBalance)
 
 	b, err := ioutil.ReadFile(ph.balancePath)
 	if err != nil {
