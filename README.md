@@ -1,12 +1,12 @@
 # ph
 
-`ph` was build to limit the daily game time of my kids.
+`ph` was build to limit the game time of my kids.
 
-It is a tool that monitors OS processes and terminates those who exceed the specified daily time limit.
+It is a tool that monitors OS processes and terminates those who exceed the specified time limit for the day.
 
 ## Configuration
 
-The daily time limit is specified in a configuration file `cfg.json`, in `JSON` format, like this:
+Time limits are specified in a configuration file `cfg.json`, in `JSON` format, like this:
 
 ```json
 [
@@ -33,13 +33,13 @@ The daily time limit is specified in a configuration file `cfg.json`, in `JSON` 
 ]
 ```
 
-When daily time balance of a process exceeds the specified time limit, the process is terminated.
+When the time balance of a process for the day exceeds the specified time limit, the process is terminated.
 
-When more than one process names are specified in `processes` group (as array or strings), then all these processes will contribute to the group's daily time balance. Processes belonging to a groups will be terminated if the time balance of the group exceeds the specified limit.
+When more than one process names are specified in `processes` group (as array or strings), then all these processes will contribute to the group's time balance for the day. Processes belonging to a groups will be terminated if the time balance of the group exceeds the specified limit.
 
-Daily time limits are in the `"HHhMMhSSs"` format, where `HH` is hours, `MM` - minutes and `SS` seconds. For example `3h45m30s` is a daily time limit of 3 hours, 45 minutes and 30 seconds.
+Time limits are in the `"HHhMMhSSs"` format, where `HH` is hours, `MM` - minutes and `SS` seconds. For example `3h45m30s` is a time limit of 3 hours, 45 minutes and 30 seconds for a particular day.
 
-Daily time limits `"limits"` can be assigned to:
+Time limits `"limits"` can be assigned to:
 
 + any day `"*"`
 + one or more specific days of the week or concrete dates, for example:
@@ -55,9 +55,9 @@ If a particular day matches more than one spec, then the most-concrete spec will
 + concrete day of week from a `list`, e.g. `"mon tue"`
 + any day, i.e. `"*"`
 
-Week days are in format of three-letter abbreviations of the week days - `mon tue wed thu fri sat sun`.
+The days of the week are specified in format of three-letter abbreviations - `mon tue wed thu fri sat sun`.
 Dates are in format `yyyy-mm-dd`.
-When in `list`, week days or dates are separated by spaces.
+When in `list`, days of the week or dates are separated by spaces.
 
 ### Time balance check
 
@@ -80,13 +80,14 @@ Configuration can be edited through the web UI, but requires authentication with
 `ph` is a multi-platform tool that runs on Linux, macOS and Windows.
 
 ### Windows
+
 On Windows, `ph` is designed to work as Windows service.
 
 To build, install and run the tool as Windows service, run `make build`, copy the `\bin` folder somewhere and run `phsvc install` and `phsvc start`.  
 
 To enable the service to start automatically when Windows starts, open the Windows Service Manager, right click on `Process Hunter` service, select `Properties` from the context menu and set `Startup type` to `Automatic`.
 
-Run `phsvc stop` and `phsvc remove` to stop and uninstall the service. 
+Run `phsvc stop` and `phsvc remove` to stop and uninstall the service.
 
 Run `phsvc debug` to run the `ph` as a command line tool (without installing as Windows service).
 
