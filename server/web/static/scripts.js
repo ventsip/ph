@@ -168,14 +168,14 @@ function genBlackOutLine(bos) {
         bos.forEach(bo => {
             if (regex.test(bo)) {
                 const m = bo.match(regex) // see regex grouping
-                const h1 = parseInt(m[2] || '0')
-                const m1 = parseInt(m[3] || '0')
+                const h1 = parseInt(m[2] || '00')
+                const m1 = parseInt(m[3] || '00')
                 const h2 = parseInt(m[5] || '24')
                 const m2 = parseInt(m[6] || '00')
                 const start = 100.0 * (h1 + m1 / 60.0) / 24.0
                 const end = 100.0 * (h2 + m2 / 60.0) / 24.0
                 c.append(
-                    $('<div class="w3-red"></div>')
+                    $('<div class="w3-red w3-tooltip"></div>')
                     .css({
                         left: start + "%",
                         top: 0,
@@ -183,6 +183,13 @@ function genBlackOutLine(bos) {
                     })
                     .width(end - start + "%")
                     .text('\xa0')
+                    .append(
+                        $('<span class="w3-center w3-text w3-tag" style="position:absolute;left:0%;bottom:100%"></span>')
+                        .text(h1.toString().padStart(2, '0') + ':' +
+                            m1.toString().padStart(2, '0') + '..' +
+                            h2.toString().padStart(2, '0') + ':' +
+                            m2.toString().padStart(2, '0'))
+                    )
                 );
             }
         });
