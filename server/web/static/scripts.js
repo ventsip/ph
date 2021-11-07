@@ -4,7 +4,9 @@ const refreshPeriod = 60000;
 var dataConfig = {}; // loaded data
 
 function editConfig() {
-    $('#phid_edit_config').css({ display: 'block' }).find('textarea').val(JSON.stringify(dataConfig, null, 4))
+    $('#phid_edit_config').css({
+        display: 'block'
+    }).find('textarea').val(JSON.stringify(dataConfig, null, 4))
 }
 
 function saveConfig() {
@@ -12,9 +14,13 @@ function saveConfig() {
         url: '/config',
         type: 'PUT',
         contentType: 'application/json',
-        data: $('#phid_edit_config').css({ display: 'block' }).find('textarea').val(),
+        data: $('#phid_edit_config').css({
+            display: 'block'
+        }).find('textarea').val(),
         success: (r, s) => {
-            $('#phid_edit_config').css({ display: 'none' });
+            $('#phid_edit_config').css({
+                display: 'none'
+            });
             requestCfg();
             requestProcessGroupBalance();
             requestProcessBalance();
@@ -29,8 +35,7 @@ function requestData(ep, rootID, processData) {
     $.getJSON(ep, (d, s) => {
         if (s == "success") {
             processData(d, $('#' + $.escapeSelector(rootID)).html(""));
-        }
-        else {
+        } else {
             $('#' + $.escapeSelector(rootID)).text("Error retrieving data");
         }
     });
@@ -50,15 +55,15 @@ function genLimits(limits) {
     return t;
 }
 
-function genBlackout(blackout) {
+function genBlackout(bos) {
     let t = $('<table class="w3-table w3-bordered"></table>')
 
-    if (blackout) {
-        Object.keys(blackout).forEach(key => {
+    if (bos) {
+        Object.keys(bos).forEach(key => {
             t.append(
                 $('<tr></tr>').append(
                     $('<td class="w3-right-align"></td>').text(key),
-                    $('<td></td>').text(blackout[key])
+                    $('<td></td>').text(bos[key])
                 )
             );
         });
@@ -73,8 +78,12 @@ function registerHover(e, name) {
     let cn = "ph-" + btoa(name);
     let s = '.' + $.escapeSelector(cn);
     e.addClass(cn).hover(
-        () => { $(s).addClass(h); },
-        () => { $(s).removeClass(h); }
+        () => {
+            $(s).addClass(h);
+        },
+        () => {
+            $(s).removeClass(h);
+        }
     );
 
     return e;
@@ -137,20 +146,58 @@ function genLimitAndBalance(l, b) {
         clr = "w3-yellow";
     }
 
-    return $('<div class="w3-dark-grey w3-round-xlarge"></div>').append(
-        $('<div class="w3-container w3-round-xlarge"></div>')
-            .addClass(clr, "w3-center")
-            .width(progress + "%")
-            .text(b + "/" + l)
+    return $('<div class="w3-dark-grey"></div>').append(
+        $('<div></div>')
+        .addClass(clr, "w3-center")
+        .width(progress + "%")
+        .text(b + "/" + l)
     );
 }
+
+function genBlackOutLine(bos) {
+    let c = $('<div class="w3-light-green"></div>');
+    c.css({
+        position: 'relative'
+    });
+    c.text('\xa0'); // non-breaking space 
+
+    // regex for hh:mm..hh:mm format
+    const regex = /^(([0-9]|0[0-9]|1[0-9]|2[0-3])\:([0-5][0-9]))?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3])\:([0-5][0-9]))?$/;
+
+    if (bos) {
+        bos.forEach(bo => {
+            if (regex.test(bo)) {
+                const m = bo.match(regex) // see regex grouping
+                const h1 = parseInt(m[2] || '0')
+                const m1 = parseInt(m[3] || '0')
+                const h2 = parseInt(m[5] || '24')
+                const m2 = parseInt(m[6] || '00')
+                const start = 100.0 * (h1 + m1 / 60.0) / 24.0
+                const end = 100.0 * (h2 + m2 / 60.0) / 24.0
+                c.append(
+                    $('<div class="w3-red"></div>')
+                    .css({
+                        left: start + "%",
+                        top: 0,
+                        position: 'absolute'
+                    })
+                    .width(end - start + "%")
+                    .text('\xa0')
+                );
+            }
+        });
+    }
+    return c;
+}
+
 
 function processPGB(data, root) {
     data.forEach(pgb => {
         root.append(
             $('<div class="w3-card w3-margin" style="float:left"></div>').append(
                 $('<header class="w3-container w3-light-blue w3-bar"></header>').append(processList(pgb.processes)),
-                $('<div class="w3-container w3-margin"></div>').append(genLimitAndBalance(pgb.limit, pgb.balance))
+                $('<div class="w3-container w3-margin"></div>').append(genLimitAndBalance(pgb.limit, pgb.balance)),
+                $('<div class="w3-container w3-margin"></div>').append(genBlackOutLine(pgb.blackout))
             )
         );
     });

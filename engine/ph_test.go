@@ -98,7 +98,7 @@ func TestIsValidDaySpecification(t *testing.T) {
 	}
 
 }
-func TestIsValidDailyLimitsFormat(t *testing.T) {
+func TestIsValidDayLimitsFormat(t *testing.T) {
 	// nothing much to test here - check TestIsValidDaySpecification
 }
 
@@ -129,8 +129,8 @@ func TestIsValidBlackoutFormat(t *testing.T) {
 	}
 }
 
-func TestEvalDailyLimit(t *testing.T) {
-	dl := DailyLimits{
+func TestEvalDayLimit(t *testing.T) {
+	dl := DayLimits{
 		"*":                     time.Second,
 		"mon tue":               time.Minute * 2,
 		"mon":                   time.Minute,
@@ -138,32 +138,32 @@ func TestEvalDailyLimit(t *testing.T) {
 		"1972-10-16":            time.Hour,
 	}
 
-	if evalDailyLimit("2019-12-21", "wed", dl) != time.Second {
-		t.Error("wrong daily limit when the day is not listed in a group or individually, but matched by \"*\"")
+	if evalDayLimit("2019-12-21", "wed", dl) != time.Second {
+		t.Error("wrong day limit when the day is not listed in a group or individually, but matched by \"*\"")
 	}
 
 	// week days
-	if evalDailyLimit("2019-12-21", "mon", dl) != time.Minute {
-		t.Error("wrong daily limit when day of week is individually specified")
+	if evalDayLimit("2019-12-21", "mon", dl) != time.Minute {
+		t.Error("wrong day limit when day of week is individually specified")
 	}
 
-	if evalDailyLimit("2019-12-21", "tue", dl) != time.Minute*2 {
-		t.Error("wrong daily limit when day of week is listed in a group")
+	if evalDayLimit("2019-12-21", "tue", dl) != time.Minute*2 {
+		t.Error("wrong day limit when day of week is listed in a group")
 	}
 
 	// dates
-	if evalDailyLimit("1972-10-16", "wed", dl) != time.Hour {
-		t.Error("wrong daily limit when date is individually specified")
+	if evalDayLimit("1972-10-16", "wed", dl) != time.Hour {
+		t.Error("wrong day limit when date is individually specified")
 	}
 
-	if evalDailyLimit("1973-05-17", "wed", dl) != time.Hour*2 {
-		t.Error("wrong daily limit when date is listed in a group")
+	if evalDayLimit("1973-05-17", "wed", dl) != time.Hour*2 {
+		t.Error("wrong day limit when date is listed in a group")
 	}
 
 	// no match
-	dl = DailyLimits{"tue": time.Second}
-	if evalDailyLimit("2019-12-21", "mon", dl) != noLimit {
-		t.Error("wrong daily limit when time limit cannot be evaluated")
+	dl = DayLimits{"tue": time.Second}
+	if evalDayLimit("2019-12-21", "mon", dl) != noLimit {
+		t.Error("wrong day limit when time limit cannot be evaluated")
 	}
 }
 
@@ -178,7 +178,8 @@ func TestIsBlocked(t *testing.T) {
 	}
 
 	for _, b := range boTrue {
-		if isBlocked(now, "1972-10-16", "mon", b) == false {
+		blocked, _ := isBlocked(now, "1972-10-16", "mon", b)
+		if blocked == false {
 			t.Error(now, " should be blocked by ", b["*"], "but is not")
 		}
 	}
@@ -191,7 +192,8 @@ func TestIsBlocked(t *testing.T) {
 	}
 
 	for _, b := range boFalse {
-		if isBlocked(now, "1972-10-16", "mon", b) == true {
+		blocked, _ := isBlocked(now, "1972-10-16", "mon", b)
+		if blocked == true {
 			t.Error(now, " should NOT be blocked by ", b["*"], "but is")
 		}
 	}
@@ -358,7 +360,7 @@ func testConfigLoadedCorrectly(t *testing.T, ph *ProcessHunter) bool {
 		len(ph.limits[0].PG) != 2 ||
 		ph.limits[0].PG[0] != "test_process" ||
 		ph.limits[0].PG[1] != "test_process.exe" ||
-		!reflect.DeepEqual(ph.limits[0].DL, DailyLimits{"mon tue wed": time.Second, "1999-12-25": time.Second}) ||
+		!reflect.DeepEqual(ph.limits[0].DL, DayLimits{"mon tue wed": time.Second, "1999-12-25": time.Second}) ||
 		len(ph.limits[0].BO) != 2 ||
 		len(ph.limits[1].BO) != 1 ||
 		len(ph.limits[2].BO) != 0 ||
@@ -478,11 +480,11 @@ func TestSetConfig(t *testing.T) {
 
 func TestLoadConfig(t *testing.T) {
 	ph := NewProcessHunter(time.Second, "", time.Hour, nil, configPath)
-	ph.limits = []ProcessGroupDailyLimit{
-		{[]string{"1"}, DailyLimits{"*": time.Minute}, BlackOut{"mon": {"..08:00"}}},
-		{[]string{"2"}, DailyLimits{"*": time.Minute}, BlackOut{"tue wed": {"12:00..14:00"}}},
-		{[]string{"3"}, DailyLimits{"*": time.Minute}, BlackOut{"*": {"22:00..", "..12:00"}, "tue": {"06:00..12:00"}}},
-		{[]string{"4"}, DailyLimits{"*": time.Minute}, BlackOut{}},
+	ph.limits = []ProcessGroupDayLimit{
+		{[]string{"1"}, DayLimits{"*": time.Minute}, BlackOut{"mon": {"..08:00"}}},
+		{[]string{"2"}, DayLimits{"*": time.Minute}, BlackOut{"tue wed": {"12:00..14:00"}}},
+		{[]string{"3"}, DayLimits{"*": time.Minute}, BlackOut{"*": {"22:00..", "..12:00"}, "tue": {"06:00..12:00"}}},
+		{[]string{"4"}, DayLimits{"*": time.Minute}, BlackOut{}},
 	}
 
 	err := ph.LoadConfig()
@@ -502,8 +504,8 @@ func TestDateToText(t *testing.T) {
 	}
 }
 
-func TestAddToDailyTimeBalance(t *testing.T) {
-	var drs dailyTimeBalance = make(dailyTimeBalance)
+func TestAddToDayTimeBalance(t *testing.T) {
+	var drs dayTimeBalance = make(dayTimeBalance)
 
 	drs.add("1", "p1", time.Second)
 	drs.add("1", "p2", time.Second)
@@ -610,8 +612,8 @@ func TestSchedulerPeriod(t *testing.T) {
 	wg.Wait()
 }
 
-func TestMarshalDailyLimit(t *testing.T) {
-	d := make(DailyLimits)
+func TestMarshalDayLimit(t *testing.T) {
+	d := make(DayLimits)
 
 	d["second"] = time.Second
 	d["minute"] = time.Minute
@@ -622,7 +624,7 @@ func TestMarshalDailyLimit(t *testing.T) {
 		t.Error("d.MarshalJSON() failed:", err)
 	}
 
-	d = make(DailyLimits)
+	d = make(DayLimits)
 
 	err = d.UnmarshalJSON(b)
 	if err != nil {
@@ -630,6 +632,6 @@ func TestMarshalDailyLimit(t *testing.T) {
 	}
 
 	if len(d) != 2 || d["second"] != time.Second || d["minute"] != time.Minute {
-		t.Error("unmarshaled DailyLimits is not correct:", d)
+		t.Error("unmarshaled DayLimits is not correct:", d)
 	}
 }

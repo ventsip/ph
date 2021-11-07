@@ -13,29 +13,29 @@ import (
 
 const noLimit = time.Hour * 10000
 
-// DailyLimits maps days to time limit
+// DayLimits maps days to time limit
 // The key (days) can be
 // - "*" (meaing 'any day of the week')
 // - space separated string of three-letter abbreviations of the days of week, i.e. Mon Tue Wed Thu Fri Sat Sun
 // - a concreate date in the format YYYY-MM-DD
 // - space separated list of dates
 // - a combination of all of the above
-type DailyLimits map[string]time.Duration
+type DayLimits map[string]time.Duration
 
-// Blackout maps days to a list of blackout periods
-// See DailyLimits for the meaning of the key of this map
+// BlackOut maps days to a list of blackout periods
+// See DayLimits for the meaning of the key of this map
 // The values (blackout periods) are strings like this:
 // "12:00..12:30" - for a 30 minutes blackout
 // "..10:00" - blackout up until 10:00 in the morning
 // "18:00.. - blackout after 6:00PM
 type BlackOut map[string][]string
 
-// ProcessGroupDailyLimit specifies daily time limit DL
+// ProcessGroupDayLimit specifies day time limit DL
 // for one or more processes in PG
-type ProcessGroupDailyLimit struct {
-	PG []string    `json:"processes"`
-	DL DailyLimits `json:"limits"`
-	BO BlackOut    `json:"blackout"`
+type ProcessGroupDayLimit struct {
+	PG []string  `json:"processes"`
+	DL DayLimits `json:"limits"`
+	BO BlackOut  `json:"blackout"`
 }
 
 // prettyDuration only purpose is to override MarshalJSON to present time.Duration in more human friendly format
@@ -43,27 +43,29 @@ type prettyDuration struct {
 	time.Duration
 }
 
-// ProcessGroupDailyBalance describes daily limit L and balance B of process group PG
-type ProcessGroupDailyBalance struct {
-	PG []string       `json:"processes"`
-	L  prettyDuration `json:"limit"`
-	B  prettyDuration `json:"balance"`
+// ProcessGroupDayBalance describes the day limit L and balance B of process group PG
+type ProcessGroupDayBalance struct {
+	PG       []string       `json:"processes"`
+	Limit    prettyDuration `json:"limit"`
+	Balance  prettyDuration `json:"balance"`
+	BlackOut []string       `json:"blackout"`
+	Blocked  bool           `json:"blocked"`
 }
 
 // TimeBalance maps process name to running time
 type TimeBalance map[string]time.Duration
 
-// dailyTimeBalance maps date to process running time
-type dailyTimeBalance map[string]TimeBalance
+// dayTimeBalance maps date to process running time
+type dayTimeBalance map[string]TimeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime for particular day
 type ProcessHunter struct {
 	limitsRWM  sync.RWMutex
-	limits     []ProcessGroupDailyLimit // configuration
-	limitsHash uint32                   // checksum of the loaded configuration (limits)
+	limits     []ProcessGroupDayLimit // configuration
+	limitsHash uint32                 // checksum of the loaded configuration (limits)
 
 	balanceRWM  sync.RWMutex
-	balance     dailyTimeBalance
+	balance     dayTimeBalance
 	checkPeriod time.Duration // how often to check processes
 	forceCheck  chan struct{} // channel that forces balance check (outsite of checkPeriod)
 	balancePath string        // where balance is periodically stored
@@ -75,7 +77,7 @@ type ProcessHunter struct {
 	cfgTime time.Time // write time stamp of the cfgPath. populated when config file is loaded
 
 	pgroupsRWM   sync.RWMutex
-	pgroups      []ProcessGroupDailyBalance // latest balance of monitored process groups
+	pgroups      []ProcessGroupDayBalance // latest balance of monitored process groups
 	processesRWM sync.RWMutex
 	processes    TimeBalance // latest balance of monitored processes
 }
@@ -90,7 +92,7 @@ func NewProcessHunter(
 	return &ProcessHunter{
 		checkPeriod: checkPeriod,
 		forceCheck:  make(chan struct{}),
-		balance:     make(dailyTimeBalance),
+		balance:     make(dayTimeBalance),
 		balancePath: balancePath,
 		savePeriod:  savePeriod,
 		killer:      killer,
@@ -98,8 +100,8 @@ func NewProcessHunter(
 	}
 }
 
-// GetLimits returns current daily limits (which are normally loaded from a config file) and its hash
-func (ph *ProcessHunter) GetLimits() ([]ProcessGroupDailyLimit, uint32) {
+// GetLimits returns current day limits (which are normally loaded from a config file) and its hash
+func (ph *ProcessHunter) GetLimits() ([]ProcessGroupDayLimit, uint32) {
 	ph.limitsRWM.RLock()
 	defer ph.limitsRWM.RUnlock()
 
@@ -107,7 +109,7 @@ func (ph *ProcessHunter) GetLimits() ([]ProcessGroupDailyLimit, uint32) {
 }
 
 // GetLatestPGroupsBalance returns pgroups
-func (ph *ProcessHunter) GetLatestPGroupsBalance() []ProcessGroupDailyBalance {
+func (ph *ProcessHunter) GetLatestPGroupsBalance() []ProcessGroupDayBalance {
 	ph.pgroupsRWM.RLock()
 	defer ph.pgroupsRWM.RUnlock()
 
@@ -136,7 +138,7 @@ var weekDays = [...]string{
 }
 
 // getActiveSpec iterates over specs,
-// which is an array of keys that are used in DailyLimits and BlackOut structures.
+// which is an array of keys that are used in DayLimits and BlackOut structures.
 // It returns the sp (an element of the specs array) and a boolean if such was found
 // based on the current date and day of week
 // it prioritizes more concrete, to more generic specifications, in order:
@@ -184,10 +186,43 @@ func getActiveSpec(dt string, wd string, specs []string) (sp string, found bool)
 	return
 }
 
+// evalDayLimit returns the day time limit,
+// based on the current date dt and week day wd, and the provided DayLimit spec dl
+// See getActiveSpec to understand how a particular DayLimit is selected from dl based on dt and dl
+func evalDayLimit(dt string, wd string, dl DayLimits) (l time.Duration) {
+	l = noLimit // effectively - no limit
+
+	specs := make([]string, len(dl))
+	i := 0
+	for k := range dl {
+		specs[i] = k
+		i++
+	}
+
+	spec, found := getActiveSpec(dt, wd, specs)
+
+	if found {
+		l = dl[spec]
+	}
+
+	return
+}
+
+// isOvertime evaluates whether the balance exceeds the active day limit,
+// based on the current date dt and week day wd, and the provided DayLimits spec dl
+// isOvertime returns overtime - the result of the evaluation and limit - the active day limit
+// See getActiveSpec to understand how a particular limit is selected from dl based on dt and dl
+func isOvertime(balance time.Duration, dt string, wd string, dl DayLimits) (overtime bool, limit time.Duration) {
+	limit = evalDayLimit(dt, wd, dl)
+	overtime = balance > limit
+	return
+}
+
 // isBlocked evaluates whether now is within bo period,
-// based on the current date dt and week wd of day, and the provided BlackOut spec bo
-// See getActiveSpec to understand how a particular BlackOut is selected
-func isBlocked(now time.Time, dt string, wd string, bo BlackOut) bool {
+// based on the current date dt and week day wd, and the provided BlackOut spec bo
+// isBlocked returns blocked - the result of the evaluation and boSpec - the active blackout specification
+// See getActiveSpec to understand how a particular boSpec is selected from bo based on dt and dl
+func isBlocked(now time.Time, dt string, wd string, bo BlackOut) (blocked bool, boSpec []string) {
 
 	specs := make([]string, len(bo))
 	i := 0
@@ -199,11 +234,12 @@ func isBlocked(now time.Time, dt string, wd string, bo BlackOut) bool {
 	spec, found := getActiveSpec(dt, wd, specs)
 
 	if found {
+		boSpec = bo[spec]
 		const layout = "15:04"
 		// strip down everything, except HH:MM
 		now, _ = time.Parse(layout, now.Format(layout))
 
-		for _, period := range bo[spec] {
+		for _, period := range boSpec {
 
 			separator := strings.Index(period, "..")
 
@@ -226,32 +262,11 @@ func isBlocked(now time.Time, dt string, wd string, bo BlackOut) bool {
 				}
 			}
 			if intersect {
-				return true
+				blocked = true
+				return
 			}
 		}
 	}
-	return false
-}
-
-// evalDailyLimit returns the daily time limit,
-// based on the current date dt and week wd of day, and the provided DailyLimit spec dl
-// See getActiveSpec to understand how a particular DailyLimit is selected
-func evalDailyLimit(dt string, wd string, dl DailyLimits) (l time.Duration) {
-	l = noLimit // effectively - no limit
-
-	specs := make([]string, len(dl))
-	i := 0
-	for k := range dl {
-		specs[i] = k
-		i++
-	}
-
-	spec, found := getActiveSpec(dt, wd, specs)
-
-	if found {
-		l = dl[spec]
-	}
-
 	return
 }
 
@@ -325,29 +340,30 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 	ph.processesRWM.Lock()
 	defer ph.processesRWM.Unlock()
 
-	ph.pgroups = make([]ProcessGroupDailyBalance, len(ph.limits))
+	ph.pgroups = make([]ProcessGroupDayBalance, len(ph.limits))
 	ph.processes = make(TimeBalance)
 
 	d := ph.balance[date]
-	for il, pgdl := range ph.limits { // iterate all processes daily limits
+	for il, pgdl := range ph.limits { // iterate all processes day limits
 		bg := time.Duration(0)
 		for _, p := range pgdl.PG { // iterate all processes in the process group
 			bg = bg + d[p]
 			ph.processes[p] = d[p].Round(time.Second)
 		}
 
-		l := evalDailyLimit(date, weekDay, pgdl.DL)
+		isOvertime, l := isOvertime(bg, date, weekDay, pgdl.DL)
+		isBlocked, bo := isBlocked(time.Now(), date, weekDay, pgdl.BO)
 
-		ph.pgroups[il] = ProcessGroupDailyBalance{
-			PG: pgdl.PG,
-			L:  prettyDuration{l},
-			B:  prettyDuration{bg.Round(time.Second)},
+		ph.pgroups[il] = ProcessGroupDayBalance{
+			PG:       pgdl.PG,
+			Limit:    prettyDuration{l},
+			Balance:  prettyDuration{bg.Round(time.Second)},
+			BlackOut: bo,
+			Blocked:  isBlocked,
 		}
 
-		isBlocked := isBlocked(time.Now(), date, weekDay, pgdl.BO)
-
 		// if overtime or blocked - kill the prcesses
-		if bg > l || isBlocked {
+		if isOvertime || isBlocked {
 			log.Println(pgdl.PG, ":", bg, "/", l)
 			for _, p := range pgdl.PG { // iterate all processes in the process group
 				if d[p] > 0 {
@@ -431,7 +447,7 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, fo
 }
 
 // add adds t to the balance of the process proc for the day
-func (dr *dailyTimeBalance) add(day string, proc string, t time.Duration) {
+func (dr *dayTimeBalance) add(day string, proc string, t time.Duration) {
 	if _, dOk := (*dr)[day]; !dOk {
 		(*dr)[day] = make(TimeBalance)
 	}
