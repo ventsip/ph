@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package main
@@ -14,7 +15,7 @@ import (
 const (
 	svcName        = "ph"
 	svcDisplayName = "Process Hunter"
-	svcDescription = "Enforces daily time limit to processes. See https://bitbucket.org/ventsip/ph/src/master/"
+	svcDescription = "Enforces time limit to processes. See https://bitbucket.org/ventsip/ph/src/master/"
 )
 
 var version = "undefined"
