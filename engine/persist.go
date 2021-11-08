@@ -134,15 +134,15 @@ func isValidDayLimitsFormat(l DayLimits) bool {
 	return true
 }
 
-// isValidBlackoutFormat checks whether Blackout settings are correctly formatted
-func isValidBlackoutFormat(b BlackOut) bool {
-	for k, v := range b {
+// isValidDowntimeFormat checks whether Downtime settings are correctly formatted
+func isValidDowntimeFormat(dnt Downtime) bool {
+	for k, v := range dnt {
 		// check the validity of the day specification
 		if !isValidDaySpecification(k) {
 			return false
 		}
 
-		// check the validity of the blackout period specifications
+		// check the validity of the downtime period specifications
 		re := regexp.MustCompile(`^(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?$`)
 		for _, p := range v {
 			matched := re.MatchString(p)
@@ -167,14 +167,14 @@ func parseConfig(b []byte) ([]ProcessGroupDayLimit, error) {
 		if len(l.PG) == 0 {
 			return nil, errors.New(fmt.Sprintln("Process list required"))
 		}
-		if len(l.DL) == 0 && len(l.BO) == 0 {
-			return nil, errors.New(fmt.Sprintln("Both Day limits and Blackout configurations are missing. At least one of them should be configured"))
+		if len(l.DL) == 0 && len(l.DT) == 0 {
+			return nil, errors.New(fmt.Sprintln("Both Day limits and Downtime configurations are missing. At least one of them should be configured"))
 		}
 		if !isValidDayLimitsFormat(l.DL) {
 			return nil, errors.New(fmt.Sprintln("Bad date or days of the week format in Day limits:", l.DL))
 		}
-		if !isValidBlackoutFormat(l.BO) {
-			return nil, errors.New(fmt.Sprintln("Bad fromat of Blackout settings:", l.BO))
+		if !isValidDowntimeFormat(l.DT) {
+			return nil, errors.New(fmt.Sprintln("Bad fromat of Downtime settings:", l.DT))
 		}
 	}
 

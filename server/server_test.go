@@ -24,7 +24,7 @@ const cfg = `[
         "limits": {
             "mon": "168h0m0s"
         },
-        "blackout": null
+        "downtime": null
     }
 ]`
 

@@ -102,7 +102,7 @@ func TestIsValidDayLimitsFormat(t *testing.T) {
 	// nothing much to test here - check TestIsValidDaySpecification
 }
 
-func TestIsValidBlackoutFormat(t *testing.T) {
+func TestIsValidDowntimeFormat(t *testing.T) {
 
 	valid := []string{
 		"..12:00",
@@ -112,8 +112,8 @@ func TestIsValidBlackoutFormat(t *testing.T) {
 		".."}
 
 	for _, v := range valid {
-		if !isValidBlackoutFormat(BlackOut{"*": []string{v}}) {
-			t.Error("couldn't recognize", v, "as a valid blackout spec")
+		if !isValidDowntimeFormat(Downtime{"*": []string{v}}) {
+			t.Error("couldn't recognize", v, "as a valid downtime spec")
 		}
 	}
 
@@ -123,8 +123,8 @@ func TestIsValidBlackoutFormat(t *testing.T) {
 		"00:00...5:30",
 		"0:00..24:00"}
 	for _, inv := range invalid {
-		if isValidBlackoutFormat(BlackOut{"*": []string{inv}}) {
-			t.Error("accepted", inv, "as a valid blackout spec")
+		if isValidDowntimeFormat(Downtime{"*": []string{inv}}) {
+			t.Error("accepted", inv, "as a valid downtime spec")
 		}
 	}
 }
@@ -170,28 +170,28 @@ func TestEvalDayLimit(t *testing.T) {
 func TestIsBlocked(t *testing.T) {
 	now, _ := time.Parse("15:04 2 Jan 2006", "12:00 1 Jan 1900")
 
-	boTrue := []BlackOut{
+	dntTrue := []Downtime{
 		{"*": {"..15:00"}},
 		{"*": {"8:00.."}},
 		{"*": {"2:00..20:00"}},
 		{"*": {".."}},
 	}
 
-	for _, b := range boTrue {
+	for _, b := range dntTrue {
 		blocked, _ := isBlocked(now, "1972-10-16", "mon", b)
 		if blocked == false {
 			t.Error(now, " should be blocked by ", b["*"], "but is not")
 		}
 	}
 
-	boFalse := []BlackOut{
+	dntFalse := []Downtime{
 		{"*": {"2:00..3:00"}},
 		{"*": {"15:00..16:00"}},
 		{"*": {"..11:00"}},
 		{"*": {"13:00.."}},
 	}
 
-	for _, b := range boFalse {
+	for _, b := range dntFalse {
 		blocked, _ := isBlocked(now, "1972-10-16", "mon", b)
 		if blocked == true {
 			t.Error(now, " should NOT be blocked by ", b["*"], "but is")
@@ -361,12 +361,12 @@ func testConfigLoadedCorrectly(t *testing.T, ph *ProcessHunter) bool {
 		ph.limits[0].PG[0] != "test_process" ||
 		ph.limits[0].PG[1] != "test_process.exe" ||
 		!reflect.DeepEqual(ph.limits[0].DL, DayLimits{"mon tue wed": time.Second, "1999-12-25": time.Second}) ||
-		len(ph.limits[0].BO) != 2 ||
-		len(ph.limits[1].BO) != 1 ||
-		len(ph.limits[2].BO) != 0 ||
-		len(ph.limits[0].BO["mon"]) != 1 ||
-		len(ph.limits[1].BO["*"]) != 3 ||
-		ph.limits[1].BO["*"][0] != "..12:00" {
+		len(ph.limits[0].DT) != 2 ||
+		len(ph.limits[1].DT) != 1 ||
+		len(ph.limits[2].DT) != 0 ||
+		len(ph.limits[0].DT["mon"]) != 1 ||
+		len(ph.limits[1].DT["*"]) != 3 ||
+		ph.limits[1].DT["*"][0] != "..12:00" {
 		t.Error("Config file", configPath, "not read correctly")
 		return false
 	}
@@ -425,7 +425,7 @@ func TestSetConfig(t *testing.T) {
         "limits": {
             "*": "1h"
         },
-		"blackout": {
+		"downtime": {
 			"mon":["12:00..16:00"]
 		}
     }
@@ -453,13 +453,13 @@ func TestSetConfig(t *testing.T) {
 		limits[0].PG[0] != "p1" ||
 		limits[0].PG[1] != "p2" ||
 		limits[0].DL["mon"] != time.Second ||
-		len(limits[0].BO) != 0 ||
+		len(limits[0].DT) != 0 ||
 		len(limits[1].PG) != 1 ||
 		limits[1].PG[0] != "p3" ||
 		limits[1].DL["*"] != time.Hour ||
-		len(limits[1].BO) != 1 ||
-		len(limits[1].BO["mon"]) != 1 ||
-		limits[1].BO["mon"][0] != "12:00..16:00" {
+		len(limits[1].DT) != 1 ||
+		len(limits[1].DT["mon"]) != 1 ||
+		limits[1].DT["mon"][0] != "12:00..16:00" {
 		t.Error("config not set correctly")
 	}
 
@@ -481,10 +481,10 @@ func TestSetConfig(t *testing.T) {
 func TestLoadConfig(t *testing.T) {
 	ph := NewProcessHunter(time.Second, "", time.Hour, nil, configPath)
 	ph.limits = []ProcessGroupDayLimit{
-		{[]string{"1"}, DayLimits{"*": time.Minute}, BlackOut{"mon": {"..08:00"}}},
-		{[]string{"2"}, DayLimits{"*": time.Minute}, BlackOut{"tue wed": {"12:00..14:00"}}},
-		{[]string{"3"}, DayLimits{"*": time.Minute}, BlackOut{"*": {"22:00..", "..12:00"}, "tue": {"06:00..12:00"}}},
-		{[]string{"4"}, DayLimits{"*": time.Minute}, BlackOut{}},
+		{[]string{"1"}, DayLimits{"*": time.Minute}, Downtime{"mon": {"..08:00"}}},
+		{[]string{"2"}, DayLimits{"*": time.Minute}, Downtime{"tue wed": {"12:00..14:00"}}},
+		{[]string{"3"}, DayLimits{"*": time.Minute}, Downtime{"*": {"22:00..", "..12:00"}, "tue": {"06:00..12:00"}}},
+		{[]string{"4"}, DayLimits{"*": time.Minute}, Downtime{}},
 	}
 
 	err := ph.LoadConfig()

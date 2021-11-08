@@ -22,20 +22,20 @@ const noLimit = time.Hour * 10000
 // - a combination of all of the above
 type DayLimits map[string]time.Duration
 
-// BlackOut maps days to a list of blackout periods
+// Downtime maps days to a list of downtime periods
 // See DayLimits for the meaning of the key of this map
-// The values (blackout periods) are strings like this:
-// "12:00..12:30" - for a 30 minutes blackout
-// "..10:00" - blackout up until 10:00 in the morning
-// "18:00.. - blackout after 6:00PM
-type BlackOut map[string][]string
+// The values (downtime periods) are strings like this:
+// "12:00..12:30" - for a 30 minutes downtime
+// "..10:00" - downtime up until 10:00 in the morning
+// "18:00.." - downtime after 6:00PM
+type Downtime map[string][]string
 
 // ProcessGroupDayLimit specifies day time limit DL
 // for one or more processes in PG
 type ProcessGroupDayLimit struct {
 	PG []string  `json:"processes"`
 	DL DayLimits `json:"limits"`
-	BO BlackOut  `json:"blackout"`
+	DT Downtime  `json:"downtime"`
 }
 
 // prettyDuration only purpose is to override MarshalJSON to present time.Duration in more human friendly format
@@ -48,7 +48,7 @@ type ProcessGroupDayBalance struct {
 	PG       []string       `json:"processes"`
 	Limit    prettyDuration `json:"limit"`
 	Balance  prettyDuration `json:"balance"`
-	BlackOut []string       `json:"blackout"`
+	Downtime []string       `json:"downtime"`
 	Blocked  bool           `json:"blocked"`
 }
 
@@ -138,7 +138,7 @@ var weekDays = [...]string{
 }
 
 // getActiveSpec iterates over specs,
-// which is an array of keys that are used in DayLimits and BlackOut structures.
+// which is an array of keys that are used in DayLimits and Downtime structures.
 // It returns the sp (an element of the specs array) and a boolean if such was found
 // based on the current date and day of week
 // it prioritizes more concrete, to more generic specifications, in order:
@@ -219,14 +219,14 @@ func isOvertime(balance time.Duration, dt string, wd string, dl DayLimits) (over
 }
 
 // isBlocked evaluates whether now is within bo period,
-// based on the current date dt and week day wd, and the provided BlackOut spec bo
-// isBlocked returns blocked - the result of the evaluation and boSpec - the active blackout specification
+// based on the current date dt and week day wd, and the provided Downtime spec bo
+// isBlocked returns blocked - the result of the evaluation and boSpec - the active downtime specification
 // See getActiveSpec to understand how a particular boSpec is selected from bo based on dt and dl
-func isBlocked(now time.Time, dt string, wd string, bo BlackOut) (blocked bool, boSpec []string) {
+func isBlocked(now time.Time, dt string, wd string, dnt Downtime) (blocked bool, boSpec []string) {
 
-	specs := make([]string, len(bo))
+	specs := make([]string, len(dnt))
 	i := 0
-	for k := range bo {
+	for k := range dnt {
 		specs[i] = k
 		i++
 	}
@@ -234,7 +234,7 @@ func isBlocked(now time.Time, dt string, wd string, bo BlackOut) (blocked bool, 
 	spec, found := getActiveSpec(dt, wd, specs)
 
 	if found {
-		boSpec = bo[spec]
+		boSpec = dnt[spec]
 		const layout = "15:04"
 		// strip down everything, except HH:MM
 		now, _ = time.Parse(layout, now.Format(layout))
@@ -352,13 +352,13 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 		}
 
 		isOvertime, l := isOvertime(bg, date, weekDay, pgdl.DL)
-		isBlocked, bo := isBlocked(time.Now(), date, weekDay, pgdl.BO)
+		isBlocked, dnt := isBlocked(time.Now(), date, weekDay, pgdl.DT)
 
 		ph.pgroups[il] = ProcessGroupDayBalance{
 			PG:       pgdl.PG,
 			Limit:    prettyDuration{l},
 			Balance:  prettyDuration{bg.Round(time.Second)},
-			BlackOut: bo,
+			Downtime: dnt,
 			Blocked:  isBlocked,
 		}
 

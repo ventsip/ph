@@ -8,7 +8,7 @@
             "Mon tue WED": "1s",
             "1999-12-25": "1s"
         },
-        "blackout": {
+        "downtime": {
             "mon": [
                  "13:30..14:00"
             ],            
@@ -28,7 +28,7 @@
             "*": "1h",
             "mon tue wed thu fri sat sun": "1s"
         },
-        "blackout": {
+        "downtime": {
             "*": [
                 "..12:00",
                 "13:30..14:00",

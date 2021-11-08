@@ -55,15 +55,15 @@ function genLimits(limits) {
     return t;
 }
 
-function genBlackout(bos) {
+function genDowntime(dnts) {
     let t = $('<table class="w3-table w3-bordered"></table>')
 
-    if (bos) {
-        Object.keys(bos).forEach(key => {
+    if (dnts) {
+        Object.keys(dnts).forEach(key => {
             t.append(
                 $('<tr></tr>').append(
                     $('<td class="w3-right-align"></td>').text(key),
-                    $('<td></td>').text(bos[key])
+                    $('<td></td>').text(dnts[key])
                 )
             );
         });
@@ -106,7 +106,7 @@ function processConfig(data, root) {
             $('<div class="w3-card w3-margin" style="float:left"></div>').append(
                 $('<header class="w3-container w3-blue w3-bar"></header>').append(processList(dtl.processes)),
                 $('<div class="w3-margin" style="float:left"></div>').append(genLimits(dtl.limits)),
-                $('<div class="w3-margin" style="float:left"></div>').append(genBlackout(dtl.blackout))
+                $('<div class="w3-margin" style="float:left"></div>').append(genDowntime(dtl.downtime))
             )
         );
     });
@@ -154,7 +154,7 @@ function genLimitAndBalance(l, b) {
     );
 }
 
-function genBlackOutLine(bos) {
+function genDowntimeLine(dnts) {
     let c = $('<div class="w3-light-green"></div>');
     c.css({
         position: 'relative'
@@ -164,10 +164,10 @@ function genBlackOutLine(bos) {
     // regex for hh:mm..hh:mm format
     const regex = /^(([0-9]|0[0-9]|1[0-9]|2[0-3])\:([0-5][0-9]))?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3])\:([0-5][0-9]))?$/;
 
-    if (bos) {
-        bos.forEach(bo => {
-            if (regex.test(bo)) {
-                const m = bo.match(regex) // see regex grouping
+    if (dnts) {
+        dnts.forEach(dnt => {
+            if (regex.test(dnt)) {
+                const m = dnt.match(regex) // see regex grouping
                 const h1 = parseInt(m[2] || '00')
                 const m1 = parseInt(m[3] || '00')
                 const h2 = parseInt(m[5] || '24')
@@ -204,7 +204,7 @@ function processPGB(data, root) {
             $('<div class="w3-card w3-margin" style="float:left"></div>').append(
                 $('<header class="w3-container w3-light-blue w3-bar"></header>').append(processList(pgb.processes)),
                 $('<div class="w3-container w3-margin"></div>').append(genLimitAndBalance(pgb.limit, pgb.balance)),
-                $('<div class="w3-container w3-margin"></div>').append(genBlackOutLine(pgb.blackout))
+                $('<div class="w3-container w3-margin"></div>').append(genDowntimeLine(pgb.downtime))
             )
         );
     });
