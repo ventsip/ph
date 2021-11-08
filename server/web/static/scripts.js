@@ -154,20 +154,19 @@ function genLimitAndBalance(l, b) {
     );
 }
 
-function genDowntimeLine(dnts) {
+function genDowntimeLine(dnts, ts) {
     let c = $('<div class="w3-light-green"></div>');
     c.css({
         position: 'relative'
     });
     c.text('\xa0'); // non-breaking space 
 
-    // regex for hh:mm..hh:mm format
-    const regex = /^(([0-9]|0[0-9]|1[0-9]|2[0-3])\:([0-5][0-9]))?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3])\:([0-5][0-9]))?$/;
-
     if (dnts) {
+        // regex for hh:mm..hh:mm format
+        const regex = /^(([0-9]|0[0-9]|1[0-9]|2[0-3])\:([0-5][0-9]))?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3])\:([0-5][0-9]))?$/;
         dnts.forEach(dnt => {
             if (regex.test(dnt)) {
-                const m = dnt.match(regex) // see regex grouping
+                const m = dnt.match(regex) // see regex grouping for group indices
                 const h1 = parseInt(m[2] || '00')
                 const m1 = parseInt(m[3] || '00')
                 const h2 = parseInt(m[5] || '24')
@@ -194,6 +193,30 @@ function genDowntimeLine(dnts) {
             }
         });
     }
+
+    if (ts) {
+        // regex for hh:mm format
+        const regex = /^([0-9]|0[0-9]|1[0-9]|2[0-3])\:([0-5][0-9])$/;
+        if (regex.test(ts)) {
+            const m = ts.match(regex) // see regex grouping for group indices
+            const hr = parseInt(m[1] || '00')
+            const mn = parseInt(m[2] || '00')
+
+            const pos = 100.0 * (hr + mn / 60.0) / 24.0
+            
+            c.append(
+                $('<div class="w3-black"></div>')
+                .css({
+                    left: pos + "%",
+                    top: "0",
+                    position: 'absolute'
+                })
+                .width(2)
+                .text('\xa0')
+              );      
+        }
+    }
+
     return c;
 }
 
@@ -204,7 +227,7 @@ function processPGB(data, root) {
             $('<div class="w3-card w3-margin" style="float:left"></div>').append(
                 $('<header class="w3-container w3-light-blue w3-bar"></header>').append(processList(pgb.processes)),
                 $('<div class="w3-container w3-margin"></div>').append(genLimitAndBalance(pgb.limit, pgb.balance)),
-                $('<div class="w3-container w3-margin"></div>').append(genDowntimeLine(pgb.downtime))
+                $('<div class="w3-container w3-margin"></div>').append(genDowntimeLine(pgb.downtime, pgb.timestamp))
             )
         );
     });

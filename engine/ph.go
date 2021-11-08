@@ -11,6 +11,9 @@ import (
 	"github.com/mitchellh/go-ps"
 )
 
+// time format used in downtime specs
+const dtTimeFormat = "15:04"
+
 const noLimit = time.Hour * 10000
 
 // DayLimits maps days to time limit
@@ -30,7 +33,7 @@ type DayLimits map[string]time.Duration
 // "18:00.." - downtime after 6:00PM
 type Downtime map[string][]string
 
-// ProcessGroupDayLimit specifies day time limit DL
+// ProcessGroupDayLimit specifies day time limit DL and downtime periods DT
 // for one or more processes in PG
 type ProcessGroupDayLimit struct {
 	PG []string  `json:"processes"`
@@ -43,13 +46,14 @@ type prettyDuration struct {
 	time.Duration
 }
 
-// ProcessGroupDayBalance describes the day limit L and balance B of process group PG
+// ProcessGroupDayBalance describes day limits and monitored properties of a process group PG
 type ProcessGroupDayBalance struct {
-	PG       []string       `json:"processes"`
-	Limit    prettyDuration `json:"limit"`
-	Balance  prettyDuration `json:"balance"`
-	Downtime []string       `json:"downtime"`
-	Blocked  bool           `json:"blocked"`
+	PG        []string       `json:"processes"`
+	Limit     prettyDuration `json:"limit"`
+	Balance   prettyDuration `json:"balance"`
+	Downtime  []string       `json:"downtime"`
+	Blocked   bool           `json:"blocked"`
+	TimeStamp string         `json:"timestamp"`
 }
 
 // TimeBalance maps process name to running time
@@ -235,9 +239,9 @@ func isBlocked(now time.Time, dt string, wd string, dnt Downtime) (blocked bool,
 
 	if found {
 		boSpec = dnt[spec]
-		const layout = "15:04"
+
 		// strip down everything, except HH:MM
-		now, _ = time.Parse(layout, now.Format(layout))
+		now, _ = time.Parse(dtTimeFormat, now.Format(dtTimeFormat))
 
 		for _, period := range boSpec {
 
@@ -246,7 +250,7 @@ func isBlocked(now time.Time, dt string, wd string, dnt Downtime) (blocked bool,
 			intersect := true
 
 			if separator > 0 {
-				t, err := time.Parse(layout, period[0:separator])
+				t, err := time.Parse(dtTimeFormat, period[0:separator])
 				if err == nil {
 					if t.After(now) {
 						intersect = false
@@ -254,7 +258,7 @@ func isBlocked(now time.Time, dt string, wd string, dnt Downtime) (blocked bool,
 				}
 			}
 			if len(period) > 2 {
-				t, err := time.Parse(layout, period[separator+2:])
+				t, err := time.Parse(dtTimeFormat, period[separator+2:])
 				if err == nil {
 					if t.Before(now) {
 						intersect = false
@@ -352,14 +356,16 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 		}
 
 		isOvertime, l := isOvertime(bg, date, weekDay, pgdl.DL)
-		isBlocked, dnt := isBlocked(time.Now(), date, weekDay, pgdl.DT)
+		now := time.Now()
+		isBlocked, dnt := isBlocked(now, date, weekDay, pgdl.DT)
 
 		ph.pgroups[il] = ProcessGroupDayBalance{
-			PG:       pgdl.PG,
-			Limit:    prettyDuration{l},
-			Balance:  prettyDuration{bg.Round(time.Second)},
-			Downtime: dnt,
-			Blocked:  isBlocked,
+			PG:        pgdl.PG,
+			Limit:     prettyDuration{l},
+			Balance:   prettyDuration{bg.Round(time.Second)},
+			Downtime:  dnt,
+			Blocked:   isBlocked,
+			TimeStamp: now.Format(dtTimeFormat),
 		}
 
 		// if overtime or blocked - kill the prcesses
