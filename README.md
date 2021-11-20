@@ -2,11 +2,11 @@
 
 `ph` was build to limit the game time of my kids.
 
-It is a tool that monitors OS processes and terminates those who exceed the specified time limit for the day.
+It is a tool that monitors OS processes and terminates those that exceed the specified *time limit* for the day, and prevents processes to run during the specified *downtime*
 
 ## Configuration
 
-Time limits are specified in a configuration file `cfg.json`, in `JSON` format, like this:
+Time limits and downtime periods are specified in a configuration file `cfg.json`, in `JSON` format, like this:
 
 ```json
 [
@@ -18,6 +18,13 @@ Time limits are specified in a configuration file `cfg.json`, in `JSON` format, 
         "limits": {
             "*": "1h",
             "mon wed fri 2019-12-25": "2h30m"
+        },
+        "downtime": {
+            "*": [
+                "..12:00",
+                "13:30..14:00",
+                "22:00.."
+            ]
         }
     },
     {
@@ -33,13 +40,15 @@ Time limits are specified in a configuration file `cfg.json`, in `JSON` format, 
 ]
 ```
 
-When the time balance of a process for the day exceeds the specified time limit, the process is terminated.
+When the time balance of a process for the day exceeds the specified time limit for that day (defined in `limits` section), the process is terminated. The process is also terminated during the specified downtime (defined in `downtime` section).
 
-When more than one process names are specified in `processes` group (as array or strings), then all these processes will contribute to the group's time balance for the day. Processes belonging to a groups will be terminated if the time balance of the group exceeds the specified limit.
+When more than one process names are specified in `processes` group (as array or strings), then all these processes will contribute to the group's time balance for the day. Processes belonging to a groups will be terminated if the time balance of the group exceeds the specified limit (if defined), or during downtime periods (if defined)
 
 Time limits are in the `"HHhMMhSSs"` format, where `HH` is hours, `MM` - minutes and `SS` seconds. For example `3h45m30s` is a time limit of 3 hours, 45 minutes and 30 seconds for a particular day.
 
-Time limits `"limits"` can be assigned to:
+Downtime periods are in the `"HH:MM..HH:MM"` format (where downtime is between the two hours of the day), where time is specified in 24 hours format. `"..HH:MM"` and `"HH:MM.."` are also valid downtime periods.
+
+Time limits `"limits"` and downtime periods `"downtime"` can be assigned to:
 
 + any day `"*"`
 + one or more specific days of the week or concrete dates, for example:
@@ -65,7 +74,7 @@ When in `list`, days of the week or dates are separated by spaces.
 
 ### Configuration update
 
-`ph` monitors for changes in the configuration file (`cfg.json`) and reloads it, if changes are detected. So to change the configuration, just overwrite the configuration file.
+`ph` monitors for changes in the configuration file (`cfg.json`) and reloads it, if changes are detected. To change the configuration, just overwrite the configuration file.
 
 The configuration can also be changed through the web UI and through the API at the [/config] endpoint.
 
@@ -81,9 +90,9 @@ Configuration can be edited through the web UI, but requires authentication with
 
 ### Windows
 
-On Windows, `ph` is designed to work as Windows service.
+On Windows, `ph` is designed to work as a Windows service.
 
-To build, install and run the tool as Windows service, run `make build`, copy the `\bin` folder somewhere and run `phsvc install` and `phsvc start`.  
+To build, install and run the tool as a Windows service, run `make build`, copy the `\bin` folder somewhere and run `phsvc install` and `phsvc start`.  
 
 To enable the service to start automatically when Windows starts, open the Windows Service Manager, right click on `Process Hunter` service, select `Properties` from the context menu and set `Startup type` to `Automatic`.
 
