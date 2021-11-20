@@ -42,7 +42,9 @@ function requestData(ep, rootID, processData) {
 }
 
 function genLimits(limits) {
-    let t = $('<table class="w3-table w3-bordered"></table>')
+    let t = $('<table class="w3-table w3-bordered"></table>');
+    t.append($('<th>Day limits</th>'))
+
     Object.keys(limits).forEach(key => {
         t.append(
             $('<tr></tr>').append(
@@ -56,7 +58,8 @@ function genLimits(limits) {
 }
 
 function genDowntime(dnts) {
-    let t = $('<table class="w3-table w3-bordered"></table>')
+    let t = $('<table class="w3-table w3-bordered"></table>');
+    t.append($('<th>Downtime</th>'));
 
     if (dnts) {
         Object.keys(dnts).forEach(key => {
