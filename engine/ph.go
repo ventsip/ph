@@ -14,8 +14,6 @@ import (
 // time format used in downtime specs
 const dtTimeFormat = "15:04"
 
-const noLimit = time.Hour * 10000
-
 // DayLimits maps days to time limit
 // The key (days) can be
 // - "*" (meaing 'any day of the week')
@@ -48,12 +46,13 @@ type prettyDuration struct {
 
 // ProcessGroupDayBalance describes day limits and monitored properties of a process group PG
 type ProcessGroupDayBalance struct {
-	PG        []string       `json:"processes"`
-	Limit     prettyDuration `json:"limit"`
-	Balance   prettyDuration `json:"balance"`
-	Downtime  []string       `json:"downtime"`
-	Blocked   bool           `json:"blocked"`
-	TimeStamp string         `json:"timestamp"`
+	PG           []string       `json:"processes"`
+	Limit        prettyDuration `json:"limit"`
+	LimitDefined bool           `json:"limit_defined"`
+	Balance      prettyDuration `json:"balance"`
+	Downtime     []string       `json:"downtime"`
+	Blocked      bool           `json:"blocked"`
+	TimeStamp    string         `json:"timestamp"`
 }
 
 // TimeBalance maps process name to running time
@@ -190,12 +189,10 @@ func getActiveSpec(dt string, wd string, specs []string) (sp string, found bool)
 	return
 }
 
-// evalDayLimit returns the day time limit,
+// evalDayLimit returns the day time limit l and boolean defined that indicates if l is defined,
 // based on the current date dt and week day wd, and the provided DayLimit spec dl
 // See getActiveSpec to understand how a particular DayLimit is selected from dl based on dt and dl
-func evalDayLimit(dt string, wd string, dl DayLimits) (l time.Duration) {
-	l = noLimit // effectively - no limit
-
+func evalDayLimit(dt string, wd string, dl DayLimits) (l time.Duration, defined bool) {
 	specs := make([]string, len(dl))
 	i := 0
 	for k := range dl {
@@ -206,19 +203,23 @@ func evalDayLimit(dt string, wd string, dl DayLimits) (l time.Duration) {
 	spec, found := getActiveSpec(dt, wd, specs)
 
 	if found {
+		defined = true
 		l = dl[spec]
 	}
 
 	return
 }
 
-// isOvertime evaluates whether the balance exceeds the active day limit,
+// isOvertime evaluates whether the balance exceeds the active day limit (if defined),
 // based on the current date dt and week day wd, and the provided DayLimits spec dl
-// isOvertime returns overtime - the result of the evaluation and limit - the active day limit
+// isOvertime returns overtime - the result of the evaluation, limit - the active day limit,
+// and defined - that indicated if a limit is defined
 // See getActiveSpec to understand how a particular limit is selected from dl based on dt and dl
-func isOvertime(balance time.Duration, dt string, wd string, dl DayLimits) (overtime bool, limit time.Duration) {
-	limit = evalDayLimit(dt, wd, dl)
-	overtime = balance > limit
+func isOvertime(balance time.Duration, dt string, wd string, dl DayLimits) (overtime bool, limit time.Duration, defined bool) {
+	limit, defined = evalDayLimit(dt, wd, dl)
+	if defined {
+		overtime = balance > limit
+	}
 	return
 }
 
@@ -355,17 +356,18 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 			ph.processes[p] = d[p].Round(time.Second)
 		}
 
-		isOvertime, l := isOvertime(bg, date, weekDay, pgdl.DL)
+		isOvertime, l, defined := isOvertime(bg, date, weekDay, pgdl.DL)
 		now := time.Now()
 		isBlocked, dnt := isBlocked(now, date, weekDay, pgdl.DT)
 
 		ph.pgroups[il] = ProcessGroupDayBalance{
-			PG:        pgdl.PG,
-			Limit:     prettyDuration{l},
-			Balance:   prettyDuration{bg.Round(time.Second)},
-			Downtime:  dnt,
-			Blocked:   isBlocked,
-			TimeStamp: now.Format(dtTimeFormat),
+			PG:           pgdl.PG,
+			Limit:        prettyDuration{l},
+			LimitDefined: defined,
+			Balance:      prettyDuration{bg.Round(time.Second)},
+			Downtime:     dnt,
+			Blocked:      isBlocked,
+			TimeStamp:    now.Format(dtTimeFormat),
 		}
 
 		// if overtime or blocked - kill the prcesses

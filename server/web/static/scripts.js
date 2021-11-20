@@ -128,30 +128,32 @@ function toSeconds(d) {
     }
 }
 
-function genLimitAndBalance(l, b) {
-
-    let progress = 100; // in case limit is 0
+function genLimitAndBalance(l, d, b) {
+    let c = $('<div class="w3-grey"></div>')
     let lnmb = toSeconds(l);
-    if (lnmb > 0) {
-        progress = Math.min(100, 100 * toSeconds(b) / toSeconds(l));
+
+    if (d && lnmb > 0) {
+        let progress = Math.min(100, 100 * toSeconds(b) / lnmb);
+        let clr = "w3-light-green";
+
+        if (progress > 90) {
+            clr = "w3-red";
+        } else if (progress > 75) {
+            clr = "w3-orange";
+        } else if (progress > 50) {
+            clr = "w3-yellow";
+        }
+
+        c = c.append(
+            $('<div></div>')
+                .addClass(clr, "w3-center")
+                .width(progress + "%")
+                .text(b + "/" + l)
+        );
+    } else {
+        c.text('No limit')
     }
-
-    let clr = "w3-light-green";
-
-    if (progress > 90) {
-        clr = "w3-red";
-    } else if (progress > 75) {
-        clr = "w3-orange";
-    } else if (progress > 50) {
-        clr = "w3-yellow";
-    }
-
-    return $('<div class="w3-dark-grey"></div>').append(
-        $('<div></div>')
-        .addClass(clr, "w3-center")
-        .width(progress + "%")
-        .text(b + "/" + l)
-    );
+    return c;
 }
 
 function genDowntimeLine(dnts, ts) {
@@ -175,20 +177,20 @@ function genDowntimeLine(dnts, ts) {
                 const end = 100.0 * (h2 + m2 / 60.0) / 24.0
                 c.append(
                     $('<div class="w3-red w3-tooltip"></div>')
-                    .css({
-                        left: start + "%",
-                        top: 0,
-                        position: 'absolute'
-                    })
-                    .width(end - start + "%")
-                    .text('\xa0')
-                    .append(
-                        $('<span class="w3-center w3-text w3-tag" style="position:absolute;left:0%;bottom:100%"></span>')
-                        .text(h1.toString().padStart(2, '0') + ':' +
-                            m1.toString().padStart(2, '0') + '..' +
-                            h2.toString().padStart(2, '0') + ':' +
-                            m2.toString().padStart(2, '0'))
-                    )
+                        .css({
+                            left: start + "%",
+                            top: 0,
+                            position: 'absolute'
+                        })
+                        .width(end - start + "%")
+                        .text('\xa0')
+                        .append(
+                            $('<span class="w3-center w3-text w3-tag" style="position:absolute;left:0%;bottom:100%"></span>')
+                                .text(h1.toString().padStart(2, '0') + ':' +
+                                    m1.toString().padStart(2, '0') + '..' +
+                                    h2.toString().padStart(2, '0') + ':' +
+                                    m2.toString().padStart(2, '0'))
+                        )
                 );
             }
         });
@@ -203,17 +205,17 @@ function genDowntimeLine(dnts, ts) {
             const mn = parseInt(m[2] || '00')
 
             const pos = 100.0 * (hr + mn / 60.0) / 24.0
-            
+
             c.append(
                 $('<div class="w3-black"></div>')
-                .css({
-                    left: pos + "%",
-                    top: "0",
-                    position: 'absolute'
-                })
-                .width(2)
-                .text('\xa0')
-              );      
+                    .css({
+                        left: pos + "%",
+                        top: "0",
+                        position: 'absolute'
+                    })
+                    .width(2)
+                    .text('\xa0')
+            );
         }
     }
 
@@ -226,7 +228,7 @@ function processPGB(data, root) {
         root.append(
             $('<div class="w3-card w3-margin" style="float:left"></div>').append(
                 $('<header class="w3-container w3-light-blue w3-bar"></header>').append(processList(pgb.processes)),
-                $('<div class="w3-container w3-margin"></div>').append(genLimitAndBalance(pgb.limit, pgb.balance)),
+                $('<div class="w3-container w3-margin"></div>').append(genLimitAndBalance(pgb.limit, pgb.limit_defined, pgb.balance)),
                 $('<div class="w3-container w3-margin"></div>').append(genDowntimeLine(pgb.downtime, pgb.timestamp))
             )
         );

@@ -138,31 +138,37 @@ func TestEvalDayLimit(t *testing.T) {
 		"1972-10-16":            time.Hour,
 	}
 
-	if evalDayLimit("2019-12-21", "wed", dl) != time.Second {
+	l, d := evalDayLimit("2019-12-21", "wed", dl)
+	if !d || l != time.Second {
 		t.Error("wrong day limit when the day is not listed in a group or individually, but matched by \"*\"")
 	}
 
 	// week days
-	if evalDayLimit("2019-12-21", "mon", dl) != time.Minute {
+	l, d = evalDayLimit("2019-12-21", "mon", dl)
+	if !d || l != time.Minute {
 		t.Error("wrong day limit when day of week is individually specified")
 	}
 
-	if evalDayLimit("2019-12-21", "tue", dl) != time.Minute*2 {
+	l, d = evalDayLimit("2019-12-21", "tue", dl)
+	if !d || l != time.Minute*2 {
 		t.Error("wrong day limit when day of week is listed in a group")
 	}
 
 	// dates
-	if evalDayLimit("1972-10-16", "wed", dl) != time.Hour {
+	l, d = evalDayLimit("1972-10-16", "wed", dl)
+	if !d || l != time.Hour {
 		t.Error("wrong day limit when date is individually specified")
 	}
 
-	if evalDayLimit("1973-05-17", "wed", dl) != time.Hour*2 {
+	l, d = evalDayLimit("1973-05-17", "wed", dl)
+	if !d || l != time.Hour*2 {
 		t.Error("wrong day limit when date is listed in a group")
 	}
 
 	// no match
 	dl = DayLimits{"tue": time.Second}
-	if evalDayLimit("2019-12-21", "mon", dl) != noLimit {
+	_, d = evalDayLimit("2019-12-21", "mon", dl)
+	if d {
 		t.Error("wrong day limit when time limit cannot be evaluated")
 	}
 }

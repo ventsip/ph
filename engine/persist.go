@@ -86,6 +86,9 @@ func (dtl *DayLimits) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// reDate is a compiled regex for dates yyyy-mm-dd
+var reDate = regexp.MustCompile(`^\d{1,4}-\d{1,2}-\d{1,2}$`)
+
 // isValidDaySpecification checks whether spec is a valid day specification
 func isValidDaySpecification(spec string) bool {
 	if spec == "*" {
@@ -98,7 +101,6 @@ func isValidDaySpecification(spec string) bool {
 		return false
 	}
 
-	re := regexp.MustCompile(`^\d{1,4}-\d{1,2}-\d{1,2}$`)
 	for _, w := range words {
 		valid := false
 
@@ -111,7 +113,7 @@ func isValidDaySpecification(spec string) bool {
 		}
 
 		// dates
-		matched := re.MatchString(w)
+		matched := reDate.MatchString(w)
 		if matched {
 			valid = true
 			break
@@ -134,6 +136,9 @@ func isValidDayLimitsFormat(l DayLimits) bool {
 	return true
 }
 
+// reDowntimePeriod is a compiled regex of the downtime period hh:mm..hh:mm
+var reDowntimePeriod = regexp.MustCompile(`^(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?$`)
+
 // isValidDowntimeFormat checks whether Downtime settings are correctly formatted
 func isValidDowntimeFormat(dnt Downtime) bool {
 	for k, v := range dnt {
@@ -143,9 +148,8 @@ func isValidDowntimeFormat(dnt Downtime) bool {
 		}
 
 		// check the validity of the downtime period specifications
-		re := regexp.MustCompile(`^(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?\.\.(([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9])?$`)
 		for _, p := range v {
-			matched := re.MatchString(p)
+			matched := reDowntimePeriod.MatchString(p)
 			if !matched {
 				return false
 			}
