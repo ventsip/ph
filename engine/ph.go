@@ -61,7 +61,9 @@ type TimeBalance map[string]time.Duration
 // dayTimeBalance maps date to process running time
 type dayTimeBalance map[string]TimeBalance
 
-// ProcessHunter is monitoring and killing processes that go overtime for particular day
+// ProcessHunter is monitoring and killing processes that go overtime, and during downtime
+// for particular day
+
 type ProcessHunter struct {
 	limitsRWM  sync.RWMutex
 	limits     []ProcessGroupDayLimit // configuration
