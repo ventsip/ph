@@ -191,7 +191,7 @@ func TestGetConfig(t *testing.T) {
 	}
 	if string(b) != cfg {
 		t.Errorf("handler returned unexpected body: got %v want %v",
-			b, cfg)
+			string(b), cfg)
 	}
 
 	if ctype := r.Header.Get("Content-Type"); ctype != "application/json; charset=utf-8" {
