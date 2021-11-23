@@ -67,7 +67,7 @@ func processBalance(ph *engine.ProcessHunter) http.Handler {
 // version serves version
 func version(ver string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, ver)
+		fmt.Fprint(w, ver)
 	})
 }
 
@@ -78,7 +78,7 @@ func authPut(h http.Handler) http.Handler {
 		if r.Method == http.MethodPut { // only PUT method is protected
 			w.Header().Set("WWW-Authenticate", `Basic realm="Configuration"`)
 			u, p, ok := r.BasicAuth()
-			if ok == false {
+			if !ok {
 				http.Error(w, "Username and password required", http.StatusUnauthorized)
 				return
 			}

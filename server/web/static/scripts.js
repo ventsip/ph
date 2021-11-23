@@ -280,7 +280,7 @@ function testNotification() {
 }
 
 function requestNotificationPermission() {
-    if (!Notification) {
+    if (typeof Notification === 'undefined') {
         alert('Desktop notifications not available in your browser. Try Chromium.');
         return;
     }
