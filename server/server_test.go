@@ -244,3 +244,7 @@ func TestSimpleGetProcessBalance(t *testing.T) {
 func TestSimpleGetVersion(t *testing.T) {
 	quickTestGetJSON(t, "http://localhost:8080/version", "text/plain; charset=utf-8")
 }
+
+func TestSimpleGetBalance(t *testing.T) {
+	quickTestGetJSON(t, "http://localhost:8080/balance", "application/json; charset=utf-8")
+}

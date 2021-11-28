@@ -64,6 +64,16 @@ func processBalance(ph *engine.ProcessHunter) http.Handler {
 	})
 }
 
+// balanceHistory serves ph.GetBalance() as JSON (GET)
+func balanceHistory(ph *engine.ProcessHunter) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Cache-Control", "public, max-age=120")
+		b, _ := json.MarshalIndent(ph.GetBalance(), "", "    ")
+		fmt.Fprintf(w, "%s", b)
+	})
+}
+
 // version serves version
 func version(ver string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -107,6 +117,7 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ve
 	mux.Handle("/config", authPut(config(ph)))
 	mux.Handle("/groupbalance", groupBalance(ph))
 	mux.Handle("/processbalance", processBalance(ph))
+	mux.Handle("/balance", balanceHistory(ph))
 
 	s := http.Server{Addr: port, Handler: mux}
 

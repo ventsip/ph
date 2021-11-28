@@ -70,11 +70,11 @@ type ProcessHunter struct {
 	limitsHash uint32                 // checksum of the loaded configuration (limits)
 
 	balanceRWM  sync.RWMutex
-	balance     dayTimeBalance
-	checkPeriod time.Duration // how often to check processes
-	forceCheck  chan struct{} // channel that forces balance check (outsite of checkPeriod)
-	balancePath string        // where balance is periodically stored
-	savePeriod  time.Duration // how often to save balance to balancePath
+	balance     dayTimeBalance // balance history
+	checkPeriod time.Duration  // how often to check processes
+	forceCheck  chan struct{}  // channel that forces balance check (outsite of checkPeriod)
+	balancePath string         // where balance is periodically stored
+	savePeriod  time.Duration  // how often to save balance to balancePath
 
 	killer func(pid int) error
 
@@ -129,7 +129,15 @@ func (ph *ProcessHunter) GetLatestProcessesBalance() TimeBalance {
 	return ph.processes
 }
 
-// savePeriod is when the balance was last saved
+// GetBalance returns balance
+func (ph *ProcessHunter) GetBalance() dayTimeBalance {
+	ph.balanceRWM.RLock()
+	defer ph.balanceRWM.RUnlock()
+
+	return ph.balance
+}
+
+// lastSaved is when the balance was last saved
 var lastSaved = time.Now()
 
 var weekDays = [...]string{
@@ -296,7 +304,8 @@ func (ph *ProcessHunter) reloadConfigIfNeeded() (bool, error) {
 	return false, nil
 }
 
-// checkProcesses updates processes time balance (adding dt), checks for overtime and kills processes
+// checkProcesses updates processes time balance (adding dt),
+// checks for overtime and downtime and kills processes
 func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) error {
 
 	// 0. reload config file, if necessary
