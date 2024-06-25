@@ -13,7 +13,7 @@ Time limits and downtime periods are specified in a configuration file `cfg.json
     {
         "processes": [
             "example process 1",
-            "example process 2.exe",
+            "example process 2.exe"
         ],
         "limits": {
             "*": "1h",
