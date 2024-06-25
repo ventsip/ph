@@ -154,23 +154,26 @@ var weekDays = [...]string{
 // which is an array of keys that are used in DayLimits and Downtime structures.
 // It returns the sp (an element of the specs array) and a boolean if such was found
 // based on the current date and day of week
-// it prioritizes more concrete, to more generic specifications, in order:
-// - specific day, e.g. "wed"
-// - a day from a list: "mon wed fri"
+// it prioritizes more concrete, to more generic specifications, in the following order:
+// - exact date, e.g. "2024-12-10"
+// - a date from a list of days/dates, e.g. "2024-12-10 wed"
+// - specific day of the week, e.g. "wed"
+// - a day of the week, from a list of days, e.g. "mon wed fri"
 // - any day "*"
 func getActiveSpec(dt string, wd string, specs []string) (sp string, found bool) {
 	found = false
 
 	dateInList := false
-	dayInList := false
 	dayMatch := false
+	dayInList := false
+	
 	for _, k := range specs {
-		if k == dt { // date match - end of search
+		if k == dt { // exact date match - end of search
 			sp = k
 			found = true
 			break
 		}
-		if strings.Contains(k, dt) { // date in list
+		if strings.Contains(k, dt) { // date foud in list
 			sp = k
 			found = true
 			dateInList = true
