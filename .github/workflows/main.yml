@@ -1,0 +1,13 @@
+name: Build and test on al target OSs
+on:
+  push:
+    branches: [master]
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: build
+        run: echo build
