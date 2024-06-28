@@ -1,4 +1,4 @@
-name: Build and test on al target OSs
+name: Build and test on all target OSs
 on:
   push:
     branches: [master]
@@ -10,4 +10,4 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: build
-        run: echo build
+        run: echo ${{ matrix.os }}
