@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/ventsip/ph/engine"
+	"github.com/ventsip/ph/engine"
 )
 
 // some test configuration
