@@ -15,7 +15,7 @@ import (
 const (
 	svcName        = "ph"
 	svcDisplayName = "Process Hunter"
-	svcDescription = "Enforces time limit to processes. See https://bitbucket.org/ventsip/ph/src/master/"
+	svcDescription = "Enforces time limit to processes. See https://github.com/ventsip/ph/src/master/"
 )
 
 var version = "undefined"
