@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"bitbucket.org/ventsip/ph/engine"
-	"bitbucket.org/ventsip/ph/server"
+	"github.com/ventsip/ph/engine"
+	"github.com/ventsip/ph/server"
 )
 
 var version = "undefined"
