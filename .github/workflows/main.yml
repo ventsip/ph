@@ -11,3 +11,7 @@ jobs:
     steps:
       - name: build
         run: echo ${{ matrix.os }}
+      - name: make build
+        run: make build
+      - name: make test
+        run: make test
