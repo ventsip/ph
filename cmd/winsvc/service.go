@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/ventsip/ph/engine"
-	"bitbucket.org/ventsip/ph/server"
+	"github.com/ventsip/ph/engine"
+	"github.com/ventsip/ph/server"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/eventlog"
