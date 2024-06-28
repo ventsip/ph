@@ -9,8 +9,10 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: build
+      - name: OS
         run: echo ${{ matrix.os }}
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: make build
         run: make build
       - name: make test
