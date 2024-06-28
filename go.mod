@@ -1,4 +1,4 @@
-module bitbucket.org/ventsip/ph
+module github.com/ventsip/ph
 
 go 1.13
 
