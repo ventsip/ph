@@ -2,6 +2,8 @@ name: Build and test on all target OSs
 on:
   push:
     branches: [master]
+  # enable manual trigerring of the workflow
+  workflow_dispatch: 
 jobs:
   build-and-test:
     strategy:
