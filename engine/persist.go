@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"hash/crc32"
-	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -230,7 +229,7 @@ func (ph *ProcessHunter) SetConfig(b []byte) error {
 	defer ph.limitsRWM.Unlock()
 
 	if ph.cfgPath != "" {
-		err = ioutil.WriteFile(ph.cfgPath, b, 0644)
+		err = os.WriteFile(ph.cfgPath, b, 0644)
 		if err != nil {
 			return err
 		}
@@ -241,7 +240,7 @@ func (ph *ProcessHunter) SetConfig(b []byte) error {
 
 // LoadConfig loads ProcessHunder configuration from path
 func (ph *ProcessHunter) LoadConfig() error {
-	b, err := ioutil.ReadFile(ph.cfgPath)
+	b, err := os.ReadFile(ph.cfgPath)
 	if err != nil {
 		return err
 	}
@@ -257,14 +256,14 @@ func (ph *ProcessHunter) LoadConfig() error {
 	return ph.setLimits(limits)
 }
 
-// LoadBalance loads the balance from provided path
+// LoadBalance loads the balance from ph.balancePath
 func (ph *ProcessHunter) LoadBalance() error {
 	ph.balanceRWM.Lock()
 	defer ph.balanceRWM.Unlock()
 
 	ph.balance = make(dayTimeBalance)
 
-	b, err := ioutil.ReadFile(ph.balancePath)
+	b, err := os.ReadFile(ph.balancePath)
 	if err != nil {
 		return err
 	}
@@ -280,7 +279,7 @@ func (ph *ProcessHunter) saveBalance() error {
 		return err
 	}
 
-	return ioutil.WriteFile(ph.balancePath, d, 0644)
+	return os.WriteFile(ph.balancePath, d, 0644)
 }
 
 // SaveBalance saves balance in a thread-safe way
