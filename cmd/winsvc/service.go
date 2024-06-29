@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package main
@@ -115,7 +116,7 @@ func (m *myservice) Execute(args []string, r <-chan svc.ChangeRequest, changes c
 				defer cancel()
 				wg.Add(1)
 				go ph.Run(ctx, &wg)
-				wg.Add(2)
+				wg.Add(1)
 				go server.Serve(ctx, &wg, ph, version)
 				changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
 
