@@ -11,7 +11,6 @@ TEST_BINARY=test_process
 TEST_BINARY1=test_process1
 TEST_BINARY2=test_process2
 
-
 clean:
 ifeq ($(OS), Windows_NT)
 	rmdir /S /Q bin
@@ -23,13 +22,9 @@ build:
 ifeq ($(OS), Windows_NT)
 	cd cmd\cli & $(GOBUILD) -v -o ..\..\bin\$(BINARY).exe -ldflags="-X main.version=$(VERSION)"
 	cd cmd\winsvc & $(GOBUILD) -v -o ..\..\bin\$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
-
-	copy testdata\$(CFG_FILE) bin
 else
 	cd cmd/cli; $(GOBUILD) -v -o ../../bin/$(BINARY) -ldflags="-X main.version=$(VERSION)"
 	cd cmd/winsvc; env GOOS=windows GOARCH=amd64 $(GOBUILD) -v -o ../../bin/$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
-	
-	cp testdata/$(CFG_FILE) bin
 endif
 
 build_test:

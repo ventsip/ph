@@ -30,7 +30,7 @@ func main() {
 	log.Println("config:", cfgFile)
 	if err := ph.LoadConfig(); err != nil {
 		log.Println("error loading config file:", err)
-		return
+		//return
 	}
 
 	log.Println(ph.GetLimits())

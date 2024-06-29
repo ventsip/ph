@@ -3,7 +3,6 @@ package engine
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
@@ -469,7 +468,7 @@ func TestSetConfig(t *testing.T) {
 		t.Error("config not set correctly")
 	}
 
-	b, err := ioutil.ReadFile(ph.cfgPath)
+	b, err := os.ReadFile(ph.cfgPath)
 	if err != nil {
 		t.Error("cannot read config file", ph.cfgPath)
 	}
