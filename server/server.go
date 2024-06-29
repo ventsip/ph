@@ -23,7 +23,7 @@ func config(ph *engine.ProcessHunter) http.Handler {
 		switch r.Method {
 		case http.MethodGet:
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			l, _ := ph.GetLimits()
+			l := ph.GetLimits()
 			b, err := json.MarshalIndent(l, "", "    ")
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)

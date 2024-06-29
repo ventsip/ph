@@ -65,9 +65,8 @@ type dayTimeBalance map[string]TimeBalance
 // for particular day
 
 type ProcessHunter struct {
-	limitsRWM  sync.RWMutex
-	limits     []ProcessGroupDayLimit // configuration
-	limitsHash uint32                 // checksum of the loaded configuration (limits)
+	limitsRWM sync.RWMutex
+	limits    []ProcessGroupDayLimit // configuration
 
 	balanceRWM  sync.RWMutex
 	balance     dayTimeBalance // balance history
@@ -105,12 +104,12 @@ func NewProcessHunter(
 	}
 }
 
-// GetLimits returns current day limits (which are normally loaded from a config file) and its hash
-func (ph *ProcessHunter) GetLimits() ([]ProcessGroupDayLimit, uint32) {
+// GetLimits returns current day limits (which are normally loaded from a config file)
+func (ph *ProcessHunter) GetLimits() []ProcessGroupDayLimit {
 	ph.limitsRWM.RLock()
 	defer ph.limitsRWM.RUnlock()
 
-	return ph.limits, ph.limitsHash
+	return ph.limits
 }
 
 // GetLatestPGroupsBalance returns pgroups
@@ -166,7 +165,7 @@ func getActiveSpec(dt string, wd string, specs []string) (sp string, found bool)
 	dateInList := false
 	dayMatch := false
 	dayInList := false
-	
+
 	for _, k := range specs {
 		if k == dt { // exact date match - end of search
 			sp = k

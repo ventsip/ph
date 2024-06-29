@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hash/crc32"
 	"log"
 	"os"
 	"regexp"
@@ -184,18 +183,9 @@ func parseConfig(b []byte) ([]ProcessGroupDayLimit, error) {
 	return limits, nil
 }
 
-// crc64Table is used in crc64.Checksum
-var crc32Table = crc32.MakeTable(crc32.Koopman)
-
-// setLimits sets ph.limits, ph.cfgTime and ph.limitsHash
+// setLimits sets ph.limits, ph.cfgTime
 func (ph *ProcessHunter) setLimits(limits []ProcessGroupDayLimit) error {
 	ph.limits = limits
-
-	b, err := json.Marshal(ph.limits)
-	if err != nil {
-		log.Panicln("cannot marshal limits to json")
-	}
-	ph.limitsHash = crc32.Checksum(b, crc32Table)
 
 	if ph.cfgPath != "" {
 		file, err := os.Stat(ph.cfgPath)
@@ -216,7 +206,7 @@ func (ph *ProcessHunter) setLimits(limits []ProcessGroupDayLimit) error {
 	return nil
 }
 
-// SetConfig sets configuration b (represented as json) and saves it to the ph.cfgPath
+// SetConfig sets configuration b (represented as JSON) and saves it to the ph.cfgPath
 // if ph.cfgPath is "", then the call succeeds without saving config file
 // if ph.cfgPath cannot be written, the call fails and new config is not set.
 func (ph *ProcessHunter) SetConfig(b []byte) error {
@@ -256,7 +246,7 @@ func (ph *ProcessHunter) LoadConfig() error {
 	return ph.setLimits(limits)
 }
 
-// LoadBalance loads the balance from ph.balancePath
+// LoadBalance loads the balance from ph.balancePath, represented as JSON
 func (ph *ProcessHunter) LoadBalance() error {
 	ph.balanceRWM.Lock()
 	defer ph.balanceRWM.Unlock()
@@ -271,7 +261,7 @@ func (ph *ProcessHunter) LoadBalance() error {
 	return json.Unmarshal(b, &ph.balance)
 }
 
-// saveBalance saves balance to ph.balancePath
+// saveBalance saves balance to ph.balancePath in JSON format
 func (ph *ProcessHunter) saveBalance() error {
 	d, err := json.MarshalIndent(ph.balance, "", "\t")
 

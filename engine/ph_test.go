@@ -453,7 +453,7 @@ func TestSetConfig(t *testing.T) {
 		t.Error("Couldnot set config:", cfg)
 	}
 
-	limits, _ := ph.GetLimits()
+	limits := ph.GetLimits()
 	if len(limits) != 2 ||
 		len(limits[0].PG) != 2 ||
 		limits[0].PG[0] != "p1" ||

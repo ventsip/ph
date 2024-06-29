@@ -75,7 +75,7 @@ func TestPutConfigHandler(t *testing.T) {
 			rec.Code, http.StatusCreated)
 	}
 
-	l, _ := ph.GetLimits()
+	l := ph.GetLimits()
 	b, err := json.MarshalIndent(l, "", "    ")
 	if err != nil {
 		t.Error("Cannot marshal config to JSON?")
