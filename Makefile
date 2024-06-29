@@ -20,8 +20,8 @@ endif
 
 build:
 ifeq ($(OS), Windows_NT)
-	cd cmd\cli & $(GOBUILD) -v -o ..\..\bin\$(BINARY).exe -ldflags="-X main.version=$(VERSION)"
-	cd cmd\winsvc & $(GOBUILD) -v -o ..\..\bin\$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
+	cd cmd\\cli & $(GOBUILD) -v -o ..\\..\\bin\\$(BINARY).exe -ldflags="-X main.version=$(VERSION)"
+	cd cmd\\winsvc & $(GOBUILD) -v -o ..\\..\\bin\\$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
 else
 	cd cmd/cli; $(GOBUILD) -v -o ../../bin/$(BINARY) -ldflags="-X main.version=$(VERSION)"
 	cd cmd/winsvc; env GOOS=windows GOARCH=amd64 $(GOBUILD) -v -o ../../bin/$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
@@ -29,10 +29,10 @@ endif
 
 build_test: build
 ifeq ($(OS), Windows_NT)
-	cd test_process & $(GOBUILD) -v -o ..\bin\$(TEST_BINARY).exe
-	copy bin\$(TEST_BINARY).exe bin\$(TEST_BINARY1).exe
-	copy bin\$(TEST_BINARY).exe bin\$(TEST_BINARY2).exe
-	copy testdata\$(CFG_FILE) bin
+	cd test_process & $(GOBUILD) -v -o ..\\bin\\$(TEST_BINARY).exe
+	copy bin\\$(TEST_BINARY).exe bin\\$(TEST_BINARY1).exe
+	copy bin\\$(TEST_BINARY).exe bin\\$(TEST_BINARY2).exe
+	copy testdata\\$(CFG_FILE) bin
 else
 	cd test_process; $(GOBUILD) -v -o ../bin/$(TEST_BINARY)
 	cp bin/$(TEST_BINARY) bin/$(TEST_BINARY1)
@@ -42,8 +42,8 @@ endif
 
 test: clean build_test
 ifeq ($(OS), Windows_NT)
-	copy testdata\$(CFG_FILE) bin
-	$(GOTEST) .\... -v -coverprofile bin\cover.out
+	copy testdata\\$(CFG_FILE) bin
+	$(GOTEST) .\\... -v -coverprofile bin\\cover.out
 else
 	cp testdata/$(CFG_FILE) bin
 	$(GOTEST) ./... -v -coverprofile bin/cover.out
@@ -59,7 +59,7 @@ endif
 
 run: clean build build_test
 ifeq ($(OS), Windows_NT)
-	copy testdata\$(CFG_FILE) bin\ 
+	copy testdata\\$(CFG_FILE) bin\ 
 	cd bin & start $(TEST_BINARY)
 	cd bin & start $(TEST_BINARY1)	
 	cd bin & start $(TEST_BINARY2)
