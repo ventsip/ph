@@ -13,7 +13,7 @@ TEST_BINARY2=test_process2
 
 clean:
 ifeq ($(OS), Windows_NT)
-	rm bin -Recursive -Force
+	rm bin -Recurse -Force
 else
 	rm -f -r bin
 endif
