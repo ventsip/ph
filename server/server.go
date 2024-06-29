@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"sync"
@@ -101,6 +103,12 @@ func authPut(h http.Handler) http.Handler {
 	})
 }
 
+//go:embed webFiles
+var webFolder embed.FS
+
+// this is needed, since go:embed does not support embedding files without the directory name
+var webFS, _ = fs.Sub(webFolder, "webFiles")
+
 // Serve serves web interface for ph
 func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ver string) {
 	defer func() {
@@ -111,8 +119,7 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ve
 
 	mux := http.NewServeMux() // avoid using DefaultServeMux
 
-	fs := http.FileServer(http.Dir("web/static"))
-	mux.Handle("/", fs)
+	mux.Handle("/", http.FileServer(http.FS(webFS)))
 	mux.Handle("/version", version(ver))
 	mux.Handle("/config", authPut(config(ph)))
 	mux.Handle("/groupbalance", groupBalance(ph))

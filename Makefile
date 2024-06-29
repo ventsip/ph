@@ -11,8 +11,8 @@ TEST_BINARY=test_process
 TEST_BINARY1=test_process1
 TEST_BINARY2=test_process2
 BALANCE_JSON=balance.json
-COPY_WEB_FOLDER_WIN=xcopy server\web bin\web /i /e /y
-COPY_WEB_FOLDER_LINUX=cp -r server/web bin
+# COPY_WEB_FOLDER_WIN=xcopy server\web bin\web /i /e /y
+# COPY_WEB_FOLDER_LINUX=cp -r server/web bin
 
 clean:
 ifeq ($(OS), Windows_NT)
@@ -27,13 +27,13 @@ ifeq ($(OS), Windows_NT)
 	cd cmd\winsvc & $(GOBUILD) -v -o ..\..\bin\$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
 
 	copy testdata\$(CFG_FILE) bin
-	$(COPY_WEB_FOLDER_WIN)
+#	$(COPY_WEB_FOLDER_WIN)
 else
 	cd cmd/cli; $(GOBUILD) -v -o ../../bin/$(BINARY) -ldflags="-X main.version=$(VERSION)"
 	cd cmd/winsvc; env GOOS=windows GOARCH=amd64 $(GOBUILD) -v -o ../../bin/$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
 	
 	cp testdata/$(CFG_FILE) bin
-	$(COPY_WEB_FOLDER_LINUX)
+#	$(COPY_WEB_FOLDER_LINUX)
 endif
 
 build_test:
@@ -42,23 +42,23 @@ ifeq ($(OS), Windows_NT)
 	copy bin\$(TEST_BINARY).exe bin\$(TEST_BINARY1).exe
 	copy bin\$(TEST_BINARY).exe bin\$(TEST_BINARY2).exe
 	copy testdata\$(CFG_FILE) bin
-	$(COPY_WEB_FOLDER_WIN)
+#	$(COPY_WEB_FOLDER_WIN)
 else
 	cd test_process; $(GOBUILD) -v -o ../bin/$(TEST_BINARY)
 	cp bin/$(TEST_BINARY) bin/$(TEST_BINARY1)
 	cp bin/$(TEST_BINARY) bin/$(TEST_BINARY2)
 	cp testdata/$(CFG_FILE) bin
-	$(COPY_WEB_FOLDER_LINUX)
+#	$(COPY_WEB_FOLDER_LINUX)
 endif
 
 test: clean build_test
 ifeq ($(OS), Windows_NT)
 	copy testdata\$(CFG_FILE) bin
-	$(COPY_WEB_FOLDER_WIN)
+#	$(COPY_WEB_FOLDER_WIN)
 	$(GOTEST) .\... -coverprofile bin\cover.out
 else
 	cp testdata/$(CFG_FILE) bin
-	$(COPY_WEB_FOLDER_LINUX)
+#	$(COPY_WEB_FOLDER_LINUX)
 	$(GOTEST) ./... -coverprofile bin/cover.out
 endif
 
@@ -73,14 +73,14 @@ endif
 run: clean build build_test
 ifeq ($(OS), Windows_NT)
 	copy testdata\$(CFG_FILE) bin\ 
-	$(COPY_WEB_FOLDER_WIN)
+#	$(COPY_WEB_FOLDER_WIN)
 	cd bin & start $(TEST_BINARY)
 	cd bin & start $(TEST_BINARY1)	
 	cd bin & start $(TEST_BINARY2)
 	cd bin & $(BINARY)
 else
 	cp testdata/$(CFG_FILE) bin/
-	$(COPY_WEB_FOLDER_LINUX)
+#	$(COPY_WEB_FOLDER_LINUX)
 	cd bin; (./$(TEST_BINARY) &)
 	cd bin; (./$(TEST_BINARY1) &)	
 	cd bin; (./$(TEST_BINARY2) &)
