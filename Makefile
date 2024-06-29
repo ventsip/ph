@@ -29,23 +29,23 @@ endif
 
 build_test: build
 ifeq ($(OS), Windows_NT)
-	cd test_process && $(GOBUILD) -v -o ..\bin\$(TEST_BINARY).exe
+	cd "test_process" && $(GOBUILD) -v -o ..\bin\$(TEST_BINARY).exe
 	cp "bin\$(TEST_BINARY).exe" "bin\$(TEST_BINARY1).exe"
 	cp "bin\$(TEST_BINARY).exe" "bin\$(TEST_BINARY2).exe"
-	cp "testdata\$(CFG_FILE)" bin
+	cp "testdata\$(CFG_FILE)" "bin\"
 else
 	cd test_process; $(GOBUILD) -v -o ../bin/$(TEST_BINARY)
 	cp bin/$(TEST_BINARY) bin/$(TEST_BINARY1)
 	cp bin/$(TEST_BINARY) bin/$(TEST_BINARY2)
-	cp testdata/$(CFG_FILE) bin
+	cp testdata/$(CFG_FILE) bin/
 endif
 
 test: clean build_test
 ifeq ($(OS), Windows_NT)
-	cp "testdata\$(CFG_FILE)" bin
+	cp "testdata\$(CFG_FILE)" "bin\"
 	$(GOTEST) .\... -v -coverprofile bin\cover.out
 else
-	cp testdata/$(CFG_FILE) bin
+	cp testdata/$(CFG_FILE) bin/
 	$(GOTEST) ./... -v -coverprofile bin/cover.out
 endif
 
