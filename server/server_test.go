@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -185,7 +185,7 @@ func TestGetConfig(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", r.StatusCode, http.StatusOK)
 	}
 
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		t.Fatal("Cannot read response body")
 	}
