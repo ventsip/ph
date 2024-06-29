@@ -27,7 +27,7 @@ else
 	cd cmd/winsvc; env GOOS=windows GOARCH=amd64 $(GOBUILD) -v -o ../../bin/$(BINARY_SVC).exe -ldflags="-X main.version=$(VERSION)"
 endif
 
-build_test:
+build_test: build
 ifeq ($(OS), Windows_NT)
 	cd test_process & $(GOBUILD) -v -o ..\bin\$(TEST_BINARY).exe
 	copy bin\$(TEST_BINARY).exe bin\$(TEST_BINARY1).exe
@@ -43,10 +43,10 @@ endif
 test: clean build_test
 ifeq ($(OS), Windows_NT)
 	copy testdata\$(CFG_FILE) bin
-	$(GOTEST) .\... -coverprofile bin\cover.out
+	$(GOTEST) .\... -v -coverprofile bin\cover.out
 else
 	cp testdata/$(CFG_FILE) bin
-	$(GOTEST) ./... -coverprofile bin/cover.out
+	$(GOTEST) ./... -v -coverprofile bin/cover.out
 endif
 
 cover: test
