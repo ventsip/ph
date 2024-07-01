@@ -13,7 +13,7 @@ TEST_BINARY2=test_process2
 
 clean:
 ifeq ($(OS), Windows_NT)
-	IF EXIST "bin\" rmdir /s /q bin
+	IF EXIST bin rmdir /s /q bin
 else
 	rm -f -r bin
 endif
