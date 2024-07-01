@@ -17,9 +17,7 @@ endif
 
 clean:
 ifeq ($(OS), Windows_NT)
-	mkdir bin
-	rmdir /?
-	rmdir bin /s /q
+	mkdir bin & rmdir bin /s /q
 else
 	rm -f -r bin
 endif
