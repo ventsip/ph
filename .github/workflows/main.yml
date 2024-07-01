@@ -5,10 +5,11 @@ on:
   # enable manual trigerring of the workflow
   workflow_dispatch: 
 jobs:
-  build-and-test:
+
+  build-and-test-linux-mac:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest] #, windows-latest]
+        os: [macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Report OS
@@ -24,3 +25,21 @@ jobs:
           
       - name: Test
         run: make test
+        
+  build-and-test-win:
+    runs-on: windows-latest
+    steps:
+      - name: Report OS
+        run: echo windows-latest
+      
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+          
+      - name: Test
+        run: make test
+        shell: cmd
