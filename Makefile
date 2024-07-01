@@ -14,7 +14,7 @@ TEST_BINARY2=test_process2
 clean:
 ifeq ($(OS), Windows_NT)
 	mkdir bin 
-	rmdir /s /q bin
+	rmdir bin /s /q
 else
 	rm -f -r bin
 endif
