@@ -13,7 +13,8 @@ TEST_BINARY2=test_process2
 
 clean:
 ifeq ($(OS), Windows_NT)
-	mkdir bin 
+	mkdir bin
+	rmdir /?
 	rmdir bin /s /q
 else
 	rm -f -r bin
