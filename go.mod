@@ -1,6 +1,6 @@
 module github.com/ventsip/ph
 
-go 1.22
+go 1.22.5
 
 require (
 	github.com/mitchellh/go-ps v0.0.0-20190716172923-621e5597135b
