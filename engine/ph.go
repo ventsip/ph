@@ -223,10 +223,10 @@ func evalDayLimit(dt string, wd string, dl DayLimits) (l time.Duration, defined 
 }
 
 // isOvertime evaluates whether the balance exceeds the active day limit (if defined),
-// based on the current date dt and week day wd, and the provided DayLimits spec dl
+// based on the current date dt and week day wd, and the provided DayLimits spec dl.
 // isOvertime returns overtime - the result of the evaluation, limit - the active day limit,
-// and defined - that indicated if a limit is defined
-// See getActiveSpec to understand how a particular limit is selected from dl based on dt and dl
+// and defined - that indicated if a limit is defined.
+// See getActiveSpec to understand how a particular limit is selected from dl based on dt and dl.
 func isOvertime(balance time.Duration, dt string, wd string, dl DayLimits) (overtime bool, limit time.Duration, defined bool) {
 	limit, defined = evalDayLimit(dt, wd, dl)
 	if defined {
@@ -236,9 +236,9 @@ func isOvertime(balance time.Duration, dt string, wd string, dl DayLimits) (over
 }
 
 // isBlocked evaluates whether now is within bo period,
-// based on the current date dt and week day wd, and the provided Downtime spec bo
+// based on the current date dt and week day wd, and the provided Downtime spec bo.
 // isBlocked returns blocked - the result of the evaluation and boSpec - the active downtime specification
-// See getActiveSpec to understand how a particular boSpec is selected from bo based on dt and dl
+// See getActiveSpec to understand how a particular boSpec is selected from bo based on dt and dl.
 func isBlocked(now time.Time, dt string, wd string, dnt Downtime) (blocked bool, boSpec []string) {
 
 	specs := make([]string, len(dnt))
