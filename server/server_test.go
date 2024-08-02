@@ -174,7 +174,9 @@ func TestGetConfig(t *testing.T) {
 	wg.Add(1)
 	go ph.Run(ctx, &wg)
 	wg.Add(1)
-	go Serve(ctx, &wg, ph, "test")
+	ready := make(chan struct{})
+	go Serve(ctx, &wg, ph, "test", ready)
+	<-ready
 
 	r, err := http.Get("http://localhost:8080/config")
 	if err != nil {
@@ -210,7 +212,9 @@ func quickTestGetJSON(t *testing.T, url string, ctype string) {
 	wg.Add(1)
 	go ph.Run(ctx, &wg)
 	wg.Add(1)
-	go Serve(ctx, &wg, ph, "test")
+	ready := make(chan struct{})
+	go Serve(ctx, &wg, ph, "test", ready)
+	<-ready
 
 	r, err := http.Get(url)
 	if err != nil {
