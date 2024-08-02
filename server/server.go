@@ -109,8 +109,8 @@ var webFolder embed.FS
 // this is needed, since go:embed does not support embedding files without the directory name
 var webFS, _ = fs.Sub(webFolder, "webFiles")
 
-// Serve serves web interface for ph
-func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ver string) {
+// Serve serves web interface for ph and signals a channel when the server is ready to receive client connections
+func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ver string, ready chan<- struct{}) {
 	defer func() {
 		if wg != nil {
 			wg.Done()
@@ -129,7 +129,13 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ve
 	s := http.Server{Addr: port, Handler: mux}
 
 	log.Println("starting service")
-	go s.ListenAndServe()
+	go func() {
+		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Web service listen error: %s", err)
+		}
+	}()
+
+	ready <- struct{}{} // signal that the server is ready
 
 	<-ctx.Done()
 
