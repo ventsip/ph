@@ -117,7 +117,7 @@ func (m *myservice) Execute(args []string, r <-chan svc.ChangeRequest, changes c
 				wg.Add(1)
 				go ph.Run(ctx, &wg)
 				wg.Add(1)
-				go server.Serve(ctx, &wg, ph, version, make(chan<- struct{}))
+				go server.Serve(ctx, &wg, ph, version, make(chan<- struct{}, 1))
 				changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
 
 			default:

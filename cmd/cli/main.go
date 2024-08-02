@@ -54,7 +54,7 @@ func main() {
 	wg.Add(1)
 	go ph.Run(ctx, &wg)
 	wg.Add(1)
-	go server.Serve(ctx, &wg, ph, version, make(chan<- struct{}))
+	go server.Serve(ctx, &wg, ph, version, make(chan<- struct{}, 1))
 	wg.Wait()
 
 	if err := ph.SaveBalance(); err != nil {

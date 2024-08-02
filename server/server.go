@@ -131,7 +131,7 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ve
 	log.Println("starting service")
 	go func() {
 		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Web service listen error: %s", err)
+			log.Println("Web service listen error:", err)
 		}
 	}()
 
@@ -139,6 +139,7 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, ph *engine.ProcessHunter, ve
 
 	<-ctx.Done()
 
+	log.Println("Web service shutting down")
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	err := s.Shutdown(ctx)
