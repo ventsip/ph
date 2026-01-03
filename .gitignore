@@ -1,3 +1,7 @@
 testdata/balance.json
 bin/
 .vscode/settings.json
+
+# Coverage files
+*.out
+coverage.html
