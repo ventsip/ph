@@ -16,9 +16,9 @@ const dtTimeFormat = "15:04"
 
 // DayLimits maps days to time limit
 // The key (days) can be
-// - "*" (meaing 'any day of the week')
+// - "*" (meaning 'any day of the week')
 // - space separated string of three-letter abbreviations of the days of week, i.e. Mon Tue Wed Thu Fri Sat Sun
-// - a concreate date in the format YYYY-MM-DD
+// - a concrete date in the format YYYY-MM-DD
 // - space separated list of dates
 // - a combination of all of the above
 type DayLimits map[string]time.Duration
@@ -71,7 +71,7 @@ type ProcessHunter struct {
 	balanceRWM  sync.RWMutex
 	balance     dayTimeBalance // balance history
 	checkPeriod time.Duration  // how often to check processes
-	forceCheck  chan struct{}  // channel that forces balance check (outsite of checkPeriod)
+	forceCheck  chan struct{}  // channel that forces balance check (outside of checkPeriod)
 	balancePath string         // where balance is periodically stored
 	savePeriod  time.Duration  // how often to save balance to balancePath
 
@@ -172,7 +172,7 @@ func getActiveSpec(dt string, wd string, specs []string) (sp string, found bool)
 			found = true
 			break
 		}
-		if strings.Contains(k, dt) { // date foud in list
+		if strings.Contains(k, dt) { // date found in list
 			sp = k
 			found = true
 			dateInList = true
@@ -383,7 +383,7 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 			TimeStamp:    now.Format(dtTimeFormat),
 		}
 
-		// if overtime or blocked - kill the prcesses
+		// if overtime or blocked - kill the processes
 		if isOvertime || isBlocked {
 			log.Println(pgdl.PG, ":", bg, "/", l)
 			for _, p := range pgdl.PG { // iterate all processes in the process group

@@ -449,7 +449,7 @@ func TestSetConfig(t *testing.T) {
 
 	err = ph.SetConfig([]byte(cfg))
 	if err != nil {
-		t.Error("Couldnot set config:", cfg)
+		t.Error("Could not set config:", cfg)
 	}
 
 	limits := ph.GetLimits()

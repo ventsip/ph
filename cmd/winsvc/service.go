@@ -45,7 +45,7 @@ func (m *myservice) Execute(args []string, r <-chan svc.ChangeRequest, changes c
 		log.Println("error", err, "changing local directory", wd)
 	}
 
-	// period defines how often the proccess list is checked
+	// period defines how often the process list is checked
 	const checkPeriod = time.Minute * 3
 	const savePeriod = time.Minute * 5
 	const cfgFile = "cfg.json"
@@ -76,53 +76,50 @@ func (m *myservice) Execute(args []string, r <-chan svc.ChangeRequest, changes c
 
 	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
 
-	for {
-		select {
-		case c := <-r:
-			switch c.Cmd {
-			case svc.Interrogate:
-				changes <- c.CurrentStatus
-				// Testing deadlock from https://code.google.com/p/winsvc/issues/detail?id=4
-				time.Sleep(100 * time.Millisecond)
-				changes <- c.CurrentStatus
+	for c := range r {
+		switch c.Cmd {
+		case svc.Interrogate:
+			changes <- c.CurrentStatus
+			// Testing deadlock from https://code.google.com/p/winsvc/issues/detail?id=4
+			time.Sleep(100 * time.Millisecond)
+			changes <- c.CurrentStatus
 
-			case svc.Stop, svc.Shutdown:
-				// golang.org/x/sys/windows/svc.TestExample is verifying this output.
-				testOutput := strings.Join(args, "-")
-				testOutput += fmt.Sprintf("-%d", c.Context)
-				elog.Info(1, testOutput)
+		case svc.Stop, svc.Shutdown:
+			// golang.org/x/sys/windows/svc.TestExample is verifying this output.
+			testOutput := strings.Join(args, "-")
+			testOutput += fmt.Sprintf("-%d", c.Context)
+			elog.Info(1, testOutput)
 
-				changes <- svc.Status{State: svc.StopPending}
+			changes <- svc.Status{State: svc.StopPending}
 
-				cancel()
-				wg.Wait()
+			cancel()
+			wg.Wait()
 
-				if err := ph.SaveBalance(); err != nil {
-					log.Println("error saving balance:", err)
-				}
-
-				changes <- svc.Status{State: svc.Stopped}
-				return
-
-			case svc.Pause:
-
-				cancel()
-				wg.Wait()
-				changes <- svc.Status{State: svc.Paused, Accepts: cmdsAccepted}
-
-			case svc.Continue:
-
-				ctx, cancel = context.WithCancel(context.Background())
-				defer cancel()
-				wg.Add(1)
-				go ph.Run(ctx, &wg)
-				wg.Add(1)
-				go server.Serve(ctx, &wg, ph, version, make(chan<- struct{}, 1))
-				changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
-
-			default:
-				elog.Error(1, fmt.Sprintf("unexpected control request #%d", c))
+			if err := ph.SaveBalance(); err != nil {
+				log.Println("error saving balance:", err)
 			}
+
+			changes <- svc.Status{State: svc.Stopped}
+			return
+
+		case svc.Pause:
+
+			cancel()
+			wg.Wait()
+			changes <- svc.Status{State: svc.Paused, Accepts: cmdsAccepted}
+
+		case svc.Continue:
+
+			ctx, cancel = context.WithCancel(context.Background())
+			defer cancel()
+			wg.Add(1)
+			go ph.Run(ctx, &wg)
+			wg.Add(1)
+			go server.Serve(ctx, &wg, ph, version, make(chan<- struct{}, 1))
+			changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
+
+		default:
+			elog.Error(1, fmt.Sprintf("unexpected control request #%d", c))
 		}
 	}
 }

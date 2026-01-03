@@ -68,6 +68,4 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to %s %s: %v", cmd, svcName, err)
 	}
-
-	return
 }

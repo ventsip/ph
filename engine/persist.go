@@ -176,7 +176,7 @@ func parseConfig(b []byte) ([]ProcessGroupDayLimit, error) {
 			return nil, errors.New(fmt.Sprintln("Bad date or days of the week format in Day limits:", l.DL))
 		}
 		if !isValidDowntimeFormat(l.DT) {
-			return nil, errors.New(fmt.Sprintln("Bad fromat of Downtime settings:", l.DT))
+			return nil, errors.New(fmt.Sprintln("Bad format of Downtime settings:", l.DT))
 		}
 	}
 
@@ -228,7 +228,7 @@ func (ph *ProcessHunter) SetConfig(b []byte) error {
 	return ph.setLimits(limits)
 }
 
-// LoadConfig loads ProcessHunder configuration from path
+// LoadConfig loads ProcessHunter configuration from path
 func (ph *ProcessHunter) LoadConfig() error {
 	b, err := os.ReadFile(ph.cfgPath)
 	if err != nil {
