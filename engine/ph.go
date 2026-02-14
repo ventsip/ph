@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -34,9 +35,9 @@ type Downtime map[string][]string
 // ProcessGroupDayLimit specifies day time limit DL and downtime periods DT
 // for one or more processes in PG
 type ProcessGroupDayLimit struct {
-	PG []string  `json:"processes"`
-	DL DayLimits `json:"limits"`
-	DT Downtime  `json:"downtime"`
+	PG []string  `json:"processes"` // PG is the list of process names in this group
+	DL DayLimits `json:"limits"`    // DL defines the daily time limits for this group
+	DT Downtime  `json:"downtime"`  // DT specifies downtime periods when processes are blocked
 }
 
 // prettyDuration only purpose is to override MarshalJSON to present time.Duration in more human friendly format
@@ -46,13 +47,13 @@ type prettyDuration struct {
 
 // ProcessGroupDayBalance describes day limits and monitored properties of a process group PG
 type ProcessGroupDayBalance struct {
-	PG           []string       `json:"processes"`
-	Limit        prettyDuration `json:"limit"`
-	LimitDefined bool           `json:"limit_defined"`
-	Balance      prettyDuration `json:"balance"`
-	Downtime     []string       `json:"downtime"`
-	Blocked      bool           `json:"blocked"`
-	TimeStamp    string         `json:"timestamp"`
+	PG           []string       `json:"processes"`      // PG is the list of process names in this group
+	Limit        prettyDuration `json:"limit"`          // Limit is the active daily time limit for the group
+	LimitDefined bool           `json:"limit_defined"`  // LimitDefined indicates whether a limit is defined for today
+	Balance      prettyDuration `json:"balance"`        // Balance is the total time used by the group today
+	Downtime     []string       `json:"downtime"`       // Downtime lists the active downtime periods for today
+	Blocked      bool           `json:"blocked"`        // Blocked indicates whether the group is currently in downtime
+	TimeStamp    string         `json:"timestamp"`      // TimeStamp is when this balance was calculated (HH:MM format)
 }
 
 // TimeBalance maps process name to running time
@@ -63,7 +64,6 @@ type dayTimeBalance map[string]TimeBalance
 
 // ProcessHunter is monitoring and killing processes that go overtime, and during downtime
 // for particular day
-
 type ProcessHunter struct {
 	limitsRWM sync.RWMutex
 	limits    []ProcessGroupDayLimit // configuration
@@ -84,6 +84,9 @@ type ProcessHunter struct {
 	pgroups      []ProcessGroupDayBalance // latest balance of monitored process groups
 	processesRWM sync.RWMutex
 	processes    TimeBalance // latest balance of monitored processes
+
+	lastSavedRWM sync.RWMutex
+	lastSaved    time.Time // when the balance was last saved
 }
 
 // NewProcessHunter initializes and returns a new ProcessHunter
@@ -101,6 +104,7 @@ func NewProcessHunter(
 		savePeriod:  savePeriod,
 		killer:      killer,
 		cfgPath:     cfgPath,
+		lastSaved:   time.Now(),
 	}
 }
 
@@ -112,7 +116,7 @@ func (ph *ProcessHunter) GetLimits() []ProcessGroupDayLimit {
 	return ph.limits
 }
 
-// GetLatestPGroupsBalance returns pgroups
+// GetLatestPGroupsBalance returns the latest balance information for all monitored process groups
 func (ph *ProcessHunter) GetLatestPGroupsBalance() []ProcessGroupDayBalance {
 	ph.pgroupsRWM.RLock()
 	defer ph.pgroupsRWM.RUnlock()
@@ -120,7 +124,7 @@ func (ph *ProcessHunter) GetLatestPGroupsBalance() []ProcessGroupDayBalance {
 	return ph.pgroups
 }
 
-// GetLatestProcessesBalance returns processes
+// GetLatestProcessesBalance returns the latest time balance for all monitored processes
 func (ph *ProcessHunter) GetLatestProcessesBalance() TimeBalance {
 	ph.processesRWM.RLock()
 	defer ph.processesRWM.RUnlock()
@@ -128,16 +132,13 @@ func (ph *ProcessHunter) GetLatestProcessesBalance() TimeBalance {
 	return ph.processes
 }
 
-// GetBalance returns balance
+// GetBalance returns the complete balance history mapping dates to process time balances
 func (ph *ProcessHunter) GetBalance() dayTimeBalance {
 	ph.balanceRWM.RLock()
 	defer ph.balanceRWM.RUnlock()
 
 	return ph.balance
 }
-
-// lastSaved is when the balance was last saved
-var lastSaved = time.Now()
 
 var weekDays = [...]string{
 	"sun",
@@ -151,7 +152,7 @@ var weekDays = [...]string{
 
 // getActiveSpec iterates over specs,
 // which is an array of keys that are used in DayLimits and Downtime structures.
-// It returns the sp (an element of the specs array) and a boolean if such was found
+// It returns the activeSpec (an element of the specs array) and a boolean if such was found
 // based on the current date and day of week
 // it prioritizes more concrete, to more generic specifications, in the following order:
 // - exact date, e.g. "2024-12-10"
@@ -159,7 +160,7 @@ var weekDays = [...]string{
 // - specific day of the week, e.g. "wed"
 // - a day of the week, from a list of days, e.g. "mon wed fri"
 // - any day "*"
-func getActiveSpec(dt string, wd string, specs []string) (sp string, found bool) {
+func getActiveSpec(dt string, wd string, specs []string) (activeSpec string, found bool) {
 	found = false
 
 	dateInList := false
@@ -168,30 +169,39 @@ func getActiveSpec(dt string, wd string, specs []string) (sp string, found bool)
 
 	for _, k := range specs {
 		if k == dt { // exact date match - end of search
-			sp = k
+			activeSpec = k
 			found = true
 			break
 		}
-		if strings.Contains(k, dt) { // date found in list
-			sp = k
-			found = true
-			dateInList = true
+
+		// Check if date is in a space-separated list
+		if !dateInList {
+			parts := strings.Fields(k)
+			if slices.Contains(parts, dt) {
+				activeSpec = k
+				found = true
+				dateInList = true
+			}
 		}
+
 		if !dateInList {
 			if k == wd { // day of week match
-				sp = k
+				activeSpec = k
 				found = true
 				dayMatch = true
 			}
 			if !dayMatch {
-				if strings.Contains(k, wd) { // day in list
-					sp = k
+				// Check if day is in a space-separated list
+				parts := strings.Fields(k)
+				if slices.Contains(parts, wd) {
+					activeSpec = k
 					found = true
 					dayInList = true
 				}
+
 				if !dayInList {
 					if k == "*" {
-						sp = k
+						activeSpec = k
 						found = true
 					}
 				}
@@ -201,16 +211,20 @@ func getActiveSpec(dt string, wd string, specs []string) (sp string, found bool)
 	return
 }
 
+// mapKeysToSlice extracts all keys from a map and returns them as a slice
+func mapKeysToSlice[K comparable, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // evalDayLimit returns the day time limit l and boolean defined that indicates if l is defined,
 // based on the current date dt and week day wd, and the provided DayLimit spec dl
-// See getActiveSpec to understand how a particular DayLimit is selected from dl based on dt and dl
+// See getActiveSpec to understand how a particular DayLimit is selected from dl based on dt and wd
 func evalDayLimit(dt string, wd string, dl DayLimits) (l time.Duration, defined bool) {
-	specs := make([]string, len(dl))
-	i := 0
-	for k := range dl {
-		specs[i] = k
-		i++
-	}
+	specs := mapKeysToSlice(dl)
 
 	spec, found := getActiveSpec(dt, wd, specs)
 
@@ -225,8 +239,8 @@ func evalDayLimit(dt string, wd string, dl DayLimits) (l time.Duration, defined 
 // isOvertime evaluates whether the balance exceeds the active day limit (if defined),
 // based on the current date dt and week day wd, and the provided DayLimits spec dl.
 // isOvertime returns overtime - the result of the evaluation, limit - the active day limit,
-// and defined - that indicated if a limit is defined.
-// See getActiveSpec to understand how a particular limit is selected from dl based on dt and dl.
+// and defined - that indicates if a limit is defined.
+// See getActiveSpec to understand how a particular limit is selected from dl based on dt and wd.
 func isOvertime(balance time.Duration, dt string, wd string, dl DayLimits) (overtime bool, limit time.Duration, defined bool) {
 	limit, defined = evalDayLimit(dt, wd, dl)
 	if defined {
@@ -235,49 +249,83 @@ func isOvertime(balance time.Duration, dt string, wd string, dl DayLimits) (over
 	return
 }
 
-// isBlocked evaluates whether now is within bo period,
-// based on the current date dt and week day wd, and the provided Downtime spec bo.
-// isBlocked returns blocked - the result of the evaluation and boSpec - the active downtime specification
-// See getActiveSpec to understand how a particular boSpec is selected from bo based on dt and dl.
-func isBlocked(now time.Time, dt string, wd string, dnt Downtime) (blocked bool, boSpec []string) {
+// isBlocked evaluates whether now is within a downtime period,
+// based on the current date dt and week day wd, and the provided Downtime spec dnt.
+// isBlocked returns blocked - the result of the evaluation and downtimeSpec - the active downtime specification
+// See getActiveSpec to understand how a particular downtimeSpec is selected from dnt based on dt and wd.
+func isBlocked(now time.Time, dt string, wd string, dnt Downtime) (blocked bool, downtimeSpec []string) {
 
-	specs := make([]string, len(dnt))
-	i := 0
-	for k := range dnt {
-		specs[i] = k
-		i++
-	}
+	// Step 1: Extract all day/date specification keys from the Downtime map
+	// These keys can be things like "*", "mon wed fri", "2024-12-25", etc.
+	specs := mapKeysToSlice(dnt)
 
+	// Step 2: Find the most specific matching spec for the current date and weekday
+	// getActiveSpec prioritizes: exact date > date in list > specific day > day in list > wildcard "*"
 	spec, found := getActiveSpec(dt, wd, specs)
 
+	// Step 3: If a matching spec was found, check if current time falls within any downtime period
 	if found {
-		boSpec = dnt[spec]
+		// Get the list of downtime periods for this spec (e.g., ["09:00..17:00", "..10:00"])
+		downtimeSpec = dnt[spec]
 
-		// strip down everything, except HH:MM
-		now, _ = time.Parse(dtTimeFormat, now.Format(dtTimeFormat))
+		// Normalize the current time to just HH:MM format (strip date, seconds, etc.)
+		// This allows direct time comparison without worrying about dates
+		var err error
+		now, err = time.Parse(dtTimeFormat, now.Format(dtTimeFormat))
+		if err != nil {
+			log.Printf("error normalizing time: %v", err)
+			return
+		}
 
-		for _, period := range boSpec {
+		// Step 4: Check each downtime period to see if current time falls within it
+		// Periods can be: "HH:MM..HH:MM" (range), "..HH:MM" (until), or "HH:MM.." (from)
+		for _, period := range downtimeSpec {
 
+			// Find the ".." separator that divides start and end times
 			separator := strings.Index(period, "..")
 
+			// Validate that the separator exists
+			if separator < 0 {
+				log.Printf("invalid downtime period format: %s (missing '..')", period)
+				continue
+			}
+
+			// Assume we're in the period unless proven otherwise
 			intersect := true
 
+			// Check start time constraint (if present)
+			// separator > 0 means there's a start time before ".."
 			if separator > 0 {
+				// Parse the start time (everything before "..")
 				t, err := time.Parse(dtTimeFormat, period[0:separator])
 				if err == nil {
+					// If start time is after current time, we haven't reached the period yet
 					if t.After(now) {
 						intersect = false
 					}
+				} else {
+					log.Printf("error parsing start time in downtime period %s: %v", period, err)
+					continue
 				}
 			}
-			if len(period) > 2 {
+
+			// Check end time constraint (if present)
+			// Validate bounds before slicing
+			if separator+2 < len(period) {
+				// Parse the end time (everything after "..")
 				t, err := time.Parse(dtTimeFormat, period[separator+2:])
 				if err == nil {
+					// If end time is before current time, we've passed the period
 					if t.Before(now) {
 						intersect = false
 					}
+				} else {
+					log.Printf("error parsing end time in downtime period %s: %v", period, err)
+					continue
 				}
 			}
+
+			// If current time falls within this period's constraints, we're blocked
 			if intersect {
 				blocked = true
 				return
@@ -312,12 +360,12 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 
 	// 0. reload config file, if necessary
 	// ---------------
-	b, err := ph.reloadConfigIfNeeded()
+	reloaded, err := ph.reloadConfigIfNeeded()
 	if err != nil {
 		log.Println("error attempting to reload config:", err)
 	}
 
-	if b {
+	if reloaded {
 		log.Println("config reloaded:")
 		log.Println(ph.GetLimits())
 	}
@@ -345,8 +393,12 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 	ph.balanceRWM.Lock()
 	defer ph.balanceRWM.Unlock()
 
+	// Build a map of process names to PIDs for efficient lookup
+	processPidMap := make(map[string][]int)
 	for _, p := range pss {
-		ph.balance.add(date, p.Executable(), dt)
+		processName := p.Executable()
+		ph.balance.add(date, processName, dt)
+		processPidMap[processName] = append(processPidMap[processName], p.Pid())
 	}
 
 	// 2. check which processes are overtime and kill them
@@ -361,45 +413,46 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 	ph.pgroups = make([]ProcessGroupDayBalance, len(ph.limits))
 	ph.processes = make(TimeBalance)
 
-	d := ph.balance[date]
-	for il, pgdl := range ph.limits { // iterate all processes day limits
-		bg := time.Duration(0)
-		for _, p := range pgdl.PG { // iterate all processes in the process group
-			bg = bg + d[p]
-			ph.processes[p] = d[p].Round(time.Second)
+	todayBalance := ph.balance[date]
+	for groupIdx, groupLimit := range ph.limits { // iterate all processes day limits
+		groupBalance := time.Duration(0)
+		for _, processName := range groupLimit.PG { // iterate all processes in the process group
+			groupBalance = groupBalance + todayBalance[processName]
+			ph.processes[processName] = todayBalance[processName].Round(time.Second)
 		}
 
-		isOvertime, l, defined := isOvertime(bg, date, weekDay, pgdl.DL)
-		now := time.Now()
-		isBlocked, dnt := isBlocked(now, date, weekDay, pgdl.DT)
+		isOvertime, limit, defined := isOvertime(groupBalance, date, weekDay, groupLimit.DL)
+		now = time.Now()
+		isBlocked, activeDowntime := isBlocked(now, date, weekDay, groupLimit.DT)
 
-		ph.pgroups[il] = ProcessGroupDayBalance{
-			PG:           pgdl.PG,
-			Limit:        prettyDuration{l},
+		ph.pgroups[groupIdx] = ProcessGroupDayBalance{
+			PG:           groupLimit.PG,
+			Limit:        prettyDuration{limit},
 			LimitDefined: defined,
-			Balance:      prettyDuration{bg.Round(time.Second)},
-			Downtime:     dnt,
+			Balance:      prettyDuration{groupBalance.Round(time.Second)},
+			Downtime:     activeDowntime,
 			Blocked:      isBlocked,
 			TimeStamp:    now.Format(dtTimeFormat),
 		}
 
 		// if overtime or blocked - kill the processes
 		if isOvertime || isBlocked {
-			log.Println(pgdl.PG, ":", bg, "/", l)
-			for _, p := range pgdl.PG { // iterate all processes in the process group
-				if d[p] > 0 {
-					log.Println(p, ":", d[p])
-					for _, a := range pss { // iterate all running processes
-						if a.Executable() == p {
+			log.Println(groupLimit.PG, ":", groupBalance, "/", limit)
+			for _, processName := range groupLimit.PG { // iterate all processes in the process group
+				if todayBalance[processName] > 0 {
+					log.Println(processName, ":", todayBalance[processName])
+					// Use the PID map for efficient lookup instead of iterating all processes
+					if pids, exists := processPidMap[processName]; exists {
+						for _, pid := range pids {
 							// check if context is cancelled before attempting to kill
 							select {
 							case <-ctx.Done():
 								return ctx.Err()
 							default:
-								log.Println("killing", a.Pid())
-								err := ph.killer(a.Pid())
+								log.Println("killing", pid)
+								err := ph.killer(pid)
 								if err != nil {
-									log.Println("error killing", a.Pid(), ":", err.Error())
+									log.Println("error killing", pid, ":", err.Error())
 								}
 							}
 						}
@@ -407,13 +460,17 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 				}
 			}
 		} else {
-			log.Println(pgdl.PG, "remaining:", l-bg)
+			log.Println(groupLimit.PG, "remaining:", limit-groupBalance)
 		}
 	}
 
 	// 3. Save time balance
 	// ---------------
-	if (lastSaved.Add(ph.savePeriod)).Before(time.Now()) {
+	ph.lastSavedRWM.RLock()
+	shouldSave := ph.lastSaved.Add(ph.savePeriod).Before(time.Now())
+	ph.lastSavedRWM.RUnlock()
+
+	if shouldSave {
 		if ph.balancePath != "" {
 			log.Println("saving balance", ph.balancePath)
 			err := ph.saveBalance()
@@ -421,7 +478,9 @@ func (ph *ProcessHunter) checkProcesses(ctx context.Context, dt time.Duration) e
 			if err != nil {
 				log.Println("error saving balance to", ph.balancePath, ":", err)
 			} else {
-				lastSaved = time.Now()
+				ph.lastSavedRWM.Lock()
+				ph.lastSaved = time.Now()
+				ph.lastSavedRWM.Unlock()
 			}
 		}
 	}
@@ -467,13 +526,13 @@ func scheduler(ctx context.Context, wg *sync.WaitGroup, period time.Duration, fo
 	}
 }
 
-// add adds t to the balance of the process proc for the day
-func (dr *dayTimeBalance) add(day string, proc string, t time.Duration) {
-	if _, dOk := (*dr)[day]; !dOk {
-		(*dr)[day] = make(TimeBalance)
+// add adds duration to the balance of the process processName for the day
+func (dtb *dayTimeBalance) add(day string, processName string, duration time.Duration) {
+	if _, dayExists := (*dtb)[day]; !dayExists {
+		(*dtb)[day] = make(TimeBalance)
 	}
 
-	(*dr)[day][proc] = (*dr)[day][proc] + t
+	(*dtb)[day][processName] = (*dtb)[day][processName] + duration
 }
 
 // toText returns string representation of the date of t
